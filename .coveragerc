@@ -1,0 +1,18 @@
+[run]
+branch = true
+source = pychan
+omit =
+    **/pychan/__init__.py
+
+[report]
+fail_under = 90
+show_missing = True
+skip_empty = True
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    def __str__
+    if __name__ == .__main__.:
+
+[xml]
+output = coverage.xml
