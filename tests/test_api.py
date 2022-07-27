@@ -11,8 +11,7 @@ from pychan.models import Thread, Post, File
 def test_get_boards() -> None:
     fourchan = FourChan()
 
-    with open(f"{os.path.dirname(__file__)}/html/search_page.html.mock", "r",
-              encoding="utf-8") as file:
+    with open(f"{os.path.dirname(__file__)}/html/search_page.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
     responses.add(responses.GET, "https://boards.4channel.org/search", status=200, body=test_data)
@@ -30,8 +29,7 @@ def test_get_threads() -> None:
     board = "n"
     fourchan.get_boards = lambda: [board]
 
-    with open(f"{os.path.dirname(__file__)}/html/n_threads.html.mock", "r",
-              encoding="utf-8") as file:
+    with open(f"{os.path.dirname(__file__)}/html/n_threads.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
     responses.add(
@@ -78,7 +76,7 @@ def test_get_threads_http_errors() -> None:
 def test_get_posts() -> None:
     fourchan = FourChan()
 
-    with open(f"{os.path.dirname(__file__)}/html/pol_thread_posts.html.mock", "r",
+    with open(f"{os.path.dirname(__file__)}/html/pol_thread_posts.html", "r",
               encoding="utf-8") as file:
         test_data = file.read()
 
