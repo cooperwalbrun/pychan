@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Created the project (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* Implemented the initial functionality for fetching threads, posts, and boards (by [@cooperwalbrun](https://github.com/cooperwalbrun))
