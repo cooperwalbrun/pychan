@@ -51,7 +51,7 @@ reached internally by the generator, it stops returning threads.
 for thread in fourchan.get_threads_for_board("b"):
     # Iterate over all posts in each thread
     for post in fourchan.get_posts(thread):
-        # Do stuff with the post (see available fields below)
+        # Do stuff with the post
         print(post.text)
 ```
 
@@ -67,11 +67,11 @@ of operations:
 5. *(and so on)*
 
 ```python
-# Iterate over all threads across all boards (boards are selected randomly)
+# Iterate over all threads across all boards
 for thread in fourchan.get_all_threads():
    # Iterate over all posts in each thread
    for post in fourchan.get_posts(thread):
-      # Do stuff with the post (see available fields below)
+      # Do stuff with the post
       print(post.text)
 ```
 
@@ -81,9 +81,10 @@ The following table enumerates all the kinds of data that are available on the v
 by this library.
 
 | Entity | Field | Example Values |
-| ------ | ----- | -------- |
+| ------ | ----- | -------------- |
 | `pychan.models.Thread` | `thread.board` | `"b"`, `"int"`
 | `pychan.models.Thread` | `thread.number` | `882774935`, `168484869`
+| `pychan.models.Thread` | `thread.title` | `None`, `"YLYL thread"`
 | `pychan.models.Post` | `post.thread` | `pychan.models.Thread`
 | `pychan.models.Post` | `post.number` | `882774935`, `882774974`
 | `pychan.models.Post` | `post.is_original_post` | `True`, `False`
