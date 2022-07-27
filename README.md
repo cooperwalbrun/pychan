@@ -1,4 +1,4 @@
-# pychan ![master](https://github.com/cooperwalbrun/pychan/workflows/master/badge.svg) ![PyPI](https://img.shields.io/pypi/v/pychan)
+# pychan ![master](https://github.com/cooperwalbrun/pychan/workflows/master/badge.svg) ![PyPI](https://img.shields.io/pypi/v/pychan) [![codecov](https://codecov.io/gh/cooperwalbrun/pychan/branch/master/graph/badge.svg?token=BJEJOMIYWY)](https://codecov.io/gh/cooperwalbrun/pychan)
 
 1. [Overview](#overview)
 2. [Usage](#usage)
@@ -19,7 +19,7 @@
 attempts to implement one have been less maintained than desired, so instead, this library provides
 abstractions over interacting with (scraping) 4chan directly. `pychan` is object-oriented and its
 implementation is lazy wherever possible (using Python Generators) in order to optimize performance
-and unnecessary blocking I/O operations.
+and minimize unnecessary blocking I/O operations.
 
 ## Usage
 
