@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.1.1 - 2022-07-27
+
+### Changed
+
+* The `File` model's `name` field will no longer ever be `None` (to correspond to 4chan's real behavior) (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Fixed
+
+* Fixed file names not being properly discovered on posts from the `get_posts()` operation (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.1.0 - 2022-07-27
 
 ### Added

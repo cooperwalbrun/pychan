@@ -1,3 +1,4 @@
+import copy
 import random
 from typing import Optional, Generator, Any
 from uuid import uuid4
@@ -69,8 +70,8 @@ class FourChan:
         self._logger.info(f"Fetched {len(ret)} board(s) from 4chan")
         return ret
 
-    def _get_thread_helper(self, board: str,
-                           page_number: int) -> Optional[Generator[Thread, None, None]]:
+    def _get_threads_helper(self, board: str,
+                            page_number: int) -> Optional[Generator[Thread, None, None]]:
         self._logger.info(f"Fetching threads for page {page_number} of /{board}/...")
         url = f"https://boards.4channel.org/{board}"
         if page_number > 1:
@@ -108,7 +109,7 @@ class FourChan:
                 ))
                 continue
 
-            for thread in self._get_thread_helper(board, page_numbers[board]):
+            for thread in self._get_threads_helper(board, page_numbers[board]):
                 yield thread
 
     def get_threads_for_board(self, board: str) -> Generator[Thread, None, None]:
@@ -116,7 +117,7 @@ class FourChan:
         page_number = 0
         while page_number < self._PAGE_MAX:
             page_number += 1
-            for thread in self._get_thread_helper(sanitized_board, page_number):
+            for thread in self._get_threads_helper(sanitized_board, page_number):
                 yield thread
 
     def get_posts(self, thread: Thread) -> list[Post]:
@@ -130,16 +131,23 @@ class FourChan:
         ret = []
         for post in soup.select("div.post"):
             op = "op" in post["class"]
+            if op and thread.title is None:
+                title = _find_first(post, ".subject")
+                title = title.text if title is not None and len(title.text.strip()) > 0 else None
+                if title is not None:
+                    thread = copy.copy(thread)
+                    thread.title = title
+
             uid = _find_first(post, "span.posteruid span")
             uid = uid.text if uid is not None and len(uid.text.strip()) > 0 else None
+
             file = None
-            file_soup = _find_first(post, "a.fileThumb")
+            file_soup = _find_first(post, ".fileText a")
             if file_soup is not None:
                 href = file_soup["href"]
                 href = "https:" + href if href.startswith("//") else href
-                file_title = file_soup.get("title", "")
-                file_title = file_title if len(file_title.strip()) > 0 else None
-                file = File(href, file_title)
+                file = File(href, name=file_soup.text)
+
             message = _find_first(post, "blockquote.postMessage")
 
             if message is not None:
