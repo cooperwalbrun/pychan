@@ -146,8 +146,7 @@ class FourChan:
             if file_soup is not None:
                 href = file_soup["href"]
                 href = "https:" + href if href.startswith("//") else href
-                file_title = file_soup.text if len(file_soup.text.strip()) > 0 else None
-                file = File(href, name=file_title)
+                file = File(href, name=file_soup.text)
 
             message = _find_first(post, "blockquote.postMessage")
 

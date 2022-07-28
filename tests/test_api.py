@@ -80,8 +80,8 @@ def test_get_posts() -> None:
               encoding="utf-8") as file:
         test_data = file.read()
 
-    # The two threads below must be identical, except the first one must be lacking a title in order
-    # to validate the dynamic internal title-fetching functionality
+    # The two threads below must be identical, except the first one must be lacking a title; this is
+    # so we can validate the dynamic internal title-fetching functionality
     thread = Thread("pol", 388462123)
     thread_with_title = Thread("pol", 388462123, title="No.1 Hitler movie in Germany?")
 

@@ -80,8 +80,8 @@ for thread in fourchan.get_all_threads():
 The following table enumerates all the kinds of data that are available on the various models used
 by this library.
 
-| Entity | Field | Example Values |
-| ------ | ----- | -------------- |
+| Entity | Field | Example Value(s) |
+| ------ | ----- | ---------------- |
 | `pychan.models.Thread` | `thread.board` | `"b"`, `"int"`
 | `pychan.models.Thread` | `thread.number` | `882774935`, `168484869`
 | `pychan.models.Thread` | `thread.title` | `None`, `"YLYL thread"`
@@ -91,7 +91,7 @@ by this library.
 | `pychan.models.Post` | `post.poster_id` | `None`, `"BYagKQXI"`
 | `pychan.models.Post` | `post.file` | `None`, `pychan.models.File`
 | `pychan.models.File` | `file.url` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
-| `pychan.models.File` | `file.name` | `None`, `"wojak.jpg"`
+| `pychan.models.File` | `file.name` | `"wojak.jpg"`, `"i feel alone.jpg"`
 
 ### Other Features
 

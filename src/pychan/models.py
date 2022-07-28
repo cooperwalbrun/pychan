@@ -36,7 +36,7 @@ class Thread:
 
 
 class File:
-    def __init__(self, url: str, *, name: Optional[str] = None):
+    def __init__(self, url: str, name: str):
         self.url = url
         self.name = name
 

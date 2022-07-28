@@ -12,10 +12,10 @@ def test_thread_equality() -> None:
     assert t1 != t3
 
     # Test comparisons with non-Thread data types
-    p1 = Post(t1, 1337, "test")
-    f1 = File("test")
-    assert t1 != p1
-    assert t1 != f1
+    post = Post(t1, 1337, "test")
+    file = File("test", "test")
+    assert t1 != post
+    assert t1 != file
 
 
 def test_post_equality() -> None:
@@ -29,24 +29,24 @@ def test_post_equality() -> None:
     assert p1 != p3
 
     # Test comparisons with non-Post data types
-    f1 = File("test")
+    file = File("test", "test")
     assert p1 != t1
-    assert p1 != f1
+    assert p1 != file
 
 
 def test_file_equality() -> None:
-    f1 = File("test")
-    f2 = File("test", name="test")
-    f3 = File("test2")
+    f1 = File("test", "test")
+    f2 = File("test", "test2")
+    f3 = File("test2", "test")
     assert f1 == f1
     assert f1 == f2
     assert f1 != f3
 
     # Test comparisons with non-File data types
-    t1 = Thread("b", 1337)
-    p1 = Post(t1, 1337, "test")
-    assert f1 != t1
-    assert f1 != p1
+    thread = Thread("b", 1337)
+    post = Post(thread, 1337, "test")
+    assert f1 != thread
+    assert f1 != post
 
 
 def test_serialization() -> None:
@@ -54,7 +54,7 @@ def test_serialization() -> None:
         thread = Thread("b", 1337, title=text)
         assert tuple(thread) == ("b", 1337, text)
 
-        file = File("test", name=text)
+        file = File("test", text)
         assert tuple(file) == ("test", text)
 
         post = Post(thread, 1337, "test", poster_id=text)

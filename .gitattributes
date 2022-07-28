@@ -1,3 +1,4 @@
+# These files will be ignored by GitHub when it computes programming language statistics for this repository
 tests/**/*.html linguist-vendored
 
 # These files will be normalized on commit (CRLF converted to LF) - asterisk is a wildcard
