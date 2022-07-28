@@ -1,3 +1,5 @@
+import copy
+
 from pychan.models import Thread, Post, File
 
 
@@ -60,3 +62,29 @@ def test_serialization() -> None:
 
         post = Post(thread, 1337, "test", poster_id=text, file=file)
         assert tuple(post) == (thread.board, thread.number, 1337, "test", False, text, file.url)
+
+
+def test_copying() -> None:
+    thread = Thread("b", 1337, title="test")
+    thread_copy = copy.copy(thread)
+    thread_deepcopy = copy.deepcopy(thread)
+    assert thread == thread_copy == thread_deepcopy
+    assert thread is not thread_copy
+    assert thread is not thread_deepcopy
+
+    file = File("test", name="test")
+    file_copy = copy.copy(file)
+    file_deepcopy = copy.deepcopy(file)
+    assert file == file_copy == file_deepcopy
+    assert file is not file_copy
+    assert file is not file_deepcopy
+
+    post = Post(thread, 1337, "test", poster_id="test")
+    post_copy = copy.copy(post)
+    post_deepcopy = copy.deepcopy(post)
+    assert post == post_copy == post_deepcopy
+    assert post is not post_copy
+    assert post is not post_deepcopy
+    assert post.thread == post_copy.thread == post_deepcopy.thread
+    assert post.thread is post_copy.thread
+    assert post.thread is not post_deepcopy.thread

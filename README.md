@@ -67,7 +67,7 @@ of operations:
 5. *(and so on)*
 
 ```python
-# Iterate over all threads across all boards
+# Iterate over all threads across all boards lazily (Python Generator)
 for thread in fourchan.get_all_threads():
    # Iterate over all posts in each thread
    for post in fourchan.get_posts(thread):
@@ -107,15 +107,20 @@ boards = fourchan.get_boards()
 
 #### Fetch Posts for a Specific Thread
 
->Warning: this will NOT work if the thread has become "stale" in 4chan and has entered an "expired"
->or "archived" state. This happens to almost all threads after they have gone inactive long enough.
->Therefore, it is recommended to use the iterating-based functionality shown above instead of doing
->this.
+>Warning: this will NOT work if the thread has become "stale" in 4chan and has entered an "archived"
+>state. This happens to almost all threads after they have gone inactive long enough. Therefore, it
+>is recommended to use the iterating-based functionality shown above instead of doing what is shown
+>below.
 
 ```python
 from pychan.models import Thread
 
+# Instantiate a Thread instance with which to query for posts
 thread = Thread("int", 168484869)
+
+# Note: the thread field in the returned posts will have a title if the thread had a title,
+# regardless of whether you provided the title above - pychan will "auto-discover" the title and
+# include it in the post models
 posts = fourchan.get_posts(thread)
 ```
 

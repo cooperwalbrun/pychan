@@ -80,7 +80,10 @@ def test_get_posts() -> None:
               encoding="utf-8") as file:
         test_data = file.read()
 
-    thread = Thread("pol", 388462123, title="No.1 Hitler movie in Germany?")
+    # The two threads below must be identical, except the first one must be lacking a title in order
+    # to validate the dynamic internal title-fetching functionality
+    thread = Thread("pol", 388462123)
+    thread_with_title = Thread("pol", 388462123, title="No.1 Hitler movie in Germany?")
 
     responses.add(
         responses.GET,
@@ -91,28 +94,32 @@ def test_get_posts() -> None:
 
     expected_posts = [
         Post(
-            thread,
+            thread_with_title,
             388462123,
             "Apparently this movie smashed German box office records, and all the dialogue is ..NOT.. scripted.",
             is_original_post=True,
             poster_id="BYagKQXI",
             file=File(
-                "https://i.4cdn.org/pol/1658892700380132.jpg", name="hitler_miss_kromier.jpg"
+                "https://i.4cdn.org/pol/1658892700380132.jpg", name="hitler miss kromier.jpg"
             )
         ),
-        Post(thread, 388462302, ">>388462123\nwhat movie?", poster_id="yzu2QJHE"),
+        Post(thread_with_title, 388462302, ">>388462123\nwhat movie?", poster_id="yzu2QJHE"),
         Post(
-            thread,
+            thread_with_title,
             388462314,
             ">>388462123\nFunny movie but there was agenda with this film",
             poster_id="xF49FJaT"
         ),
-        Post(thread, 388462450, ">>388462302\nLook who's back.", poster_id="e8uCKNk1")
+        Post(thread_with_title, 388462450, ">>388462302\nLook who's back.", poster_id="e8uCKNk1")
     ]
-    actual_posts = list(fourchan.get_posts(thread))
+    actual_posts = fourchan.get_posts(thread)
     for i, post in enumerate(expected_posts):
         assert tuple(post) == tuple(actual_posts[i])
-        assert post.file == actual_posts[i].file
+        assert tuple(post.thread) == tuple(actual_posts[i].thread)
+        if post.file is None:
+            assert post.file == actual_posts[i].file
+        else:
+            assert tuple(post.file) == tuple(actual_posts[i].file)
 
 
 def test_get_posts_http_errors() -> None:

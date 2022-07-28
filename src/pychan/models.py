@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Optional, Generator
 
 
@@ -24,12 +25,18 @@ class Thread:
 
     def __iter__(self) -> Generator[Any, None, None]:
         # We implement __iter__ so this class can be serialized as a tuple
-        for field in [self.board, self.number, None if self.title is None else self.title]:
+        for field in [self.board, self.number, self.title]:
             yield field
+
+    def __copy__(self):
+        return Thread(self.board, self.number, title=self.title)
+
+    def __deepcopy__(self, memo: dict[Any, Any]):
+        return copy.copy(self)
 
 
 class File:
-    def __init__(self, url: str, name: Optional[str] = None):
+    def __init__(self, url: str, *, name: Optional[str] = None):
         self.url = url
         self.name = name
 
@@ -52,6 +59,12 @@ class File:
         # We implement __iter__ so this class can be serialized as a tuple
         for field in [self.url, self.name]:
             yield field
+
+    def __copy__(self):
+        return File(self.url, name=self.name)
+
+    def __deepcopy__(self, memo: dict[Any, Any]):
+        return copy.copy(self)
 
 
 class Post:
@@ -105,3 +118,23 @@ class Post:
         ]
         for field in fields:
             yield field
+
+    def __copy__(self):
+        return Post(
+            self.thread,
+            self.number,
+            self.text,
+            is_original_post=self.is_original_post,
+            poster_id=self.poster_id,
+            file=self.file
+        )
+
+    def __deepcopy__(self, memo: dict[Any, Any]):
+        return Post(
+            copy.deepcopy(self.thread, memo),
+            self.number,
+            self.text,
+            is_original_post=self.is_original_post,
+            poster_id=self.poster_id,
+            file=self.file
+        )
