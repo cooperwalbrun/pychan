@@ -30,16 +30,16 @@ class PychanLogger:
 
     def debug(self, message: str) -> None:
         if self._log_level.value <= LogLevel.DEBUG.value:
-            print(self._green(message))
+            print(self._green("[pychan] " + message))
 
     def info(self, message: str) -> None:
         if self._log_level.value <= LogLevel.INFO.value:
-            print(message)
+            print("[pychan] " + message)
 
     def warn(self, message: str) -> None:
         if self._log_level.value <= LogLevel.WARN.value:
-            print(self._yellow(message))
+            print(self._yellow("[pychan] " + message))
 
     def error(self, message: str) -> None:
         if self._log_level.value <= LogLevel.ERROR.value:
-            print(self._red(message))
+            print(self._red("[pychan] " + message))
