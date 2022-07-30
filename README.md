@@ -61,23 +61,53 @@ The rest of the examples in this `README` assume that you have already created a
 
 ### Data Available on pychan's Models
 
-The following table enumerates all the kinds of data that are available on the various models used
+The following tables enumerate all the kinds of data that are available on the various models used
 by this library.
+
+Also note that all model classes in `pychan` implement the following methods:
+
+* `__repr__`
+* `__str__`
+* `__hash__`
+* `__eq__`
+* `__copy__`
+* `__deepcopy__`
+
+#### Threads
 
 | Entity | Field | Example Value(s) |
 | ------ | ----- | ---------------- |
 | `pychan.models.Thread` | `thread.board` | `"b"`, `"int"`
 | `pychan.models.Thread` | `thread.number` | `882774935`, `168484869`
 | `pychan.models.Thread` | `thread.title` | `None`, `"YLYL thread"`
+| `pychan.models.Thread` | `thread.stickied` | `True`, `False`
+| `pychan.models.Thread` | `thread.closed` | `True`, `False`
+
+#### Posts
+
+| Entity | Field | Example Value(s) |
+| ------ | ----- | ---------------- |
 | `pychan.models.Post` | `post.thread` | `pychan.models.Thread`
 | `pychan.models.Post` | `post.number` | `882774935`, `882774974`
 | `pychan.models.Post` | `post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
-| `pychan.models.Post` | `post.text` | the text of the post
+| `pychan.models.Post` | `post.text` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
 | `pychan.models.Post` | `post.is_original_post` | `True`, `False`
-| `pychan.models.Post` | `post.poster_id` | `None`, `"BYagKQXI"`
 | `pychan.models.Post` | `post.file` | `None`, `pychan.models.File`
+| `pychan.models.Post` | `post.poster` | `None`, `pychan.models.Poster`
+
+#### Files
+
+| Entity | Field | Example Value(s) |
+| ------ | ----- | ---------------- |
 | `pychan.models.File` | `file.url` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
 | `pychan.models.File` | `file.name` | `"wojak.jpg"`, `"i feel alone.jpg"`
+
+#### Posters
+
+| Entity | Field | Example Value(s) |
+| ------ | ----- | ---------------- |
+| `pychan.models.Poster` | `poster.id` | `None`, `"BYagKQXI"`
+| `pychan.models.Poster` | `poster.flag` | `None`, `"United States"`
 
 ### Iterating Over Threads
 

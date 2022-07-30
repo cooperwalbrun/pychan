@@ -7,7 +7,7 @@ import responses
 
 from pychan.api import FourChan
 from pychan.logger import LogLevel, PychanLogger
-from pychan.models import Thread, Post, File
+from pychan.models import Thread, Post, File, Poster
 
 
 @pytest.fixture
@@ -33,9 +33,9 @@ def test_get_boards(fourchan: FourChan) -> None:
 
 @responses.activate
 def test_get_threads(fourchan: FourChan) -> None:
-    board = "n"
+    board = "pol"
 
-    with open(f"{os.path.dirname(__file__)}/html/n_threads.html", "r", encoding="utf-8") as file:
+    with open(f"{os.path.dirname(__file__)}/html/pol_threads.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
     responses.add(
@@ -50,21 +50,36 @@ def test_get_threads(fourchan: FourChan) -> None:
     )
 
     expected = [
-        Thread(board, 1808861),
-        Thread(board, 1813725, title="/bqg/ Bike Questions General"),
-        Thread(board, 1808469),
-        Thread(board, 1802381),
-        Thread(board, 1804964, title="post your bike threda - /pybt/(...)"),
-        Thread(board, 1802146),
-        Thread(board, 1812284),
-        Thread(board, 1807310, title="/EMC/ - Electric Mobility Gene(...)"),
-        Thread(board, 1811932),
-        Thread(board, 1804716, title="daily ride thread - /drt/ 2.0 (...)"),
-        Thread(board, 1805194, title="I still dont get why we dont t(...)"),
-        Thread(board, 1813843),
-        Thread(board, 1813856),
-        Thread(board, 1813713, title="Foam tire inserts"),
-        Thread(board, 1813946)
+        Thread(
+            board,
+            124205675,
+            title="Welcome to /pol/ - Politically Incorrect",
+            stickied=True,
+            closed=True
+        ),
+        Thread(board, 259848258, stickied=True, closed=True),
+        Thread(board, 388895332, title="What is her end game?"),
+        Thread(board, 388890794, title="I really truly deeply don't get it"),
+        Thread(board, 388890337, title="/tg/ - Taiwan General"),
+        Thread(board, 388895822),
+        Thread(board, 388895815),
+        Thread(board, 388893920, title="What exactly is the problem with being trans?"),
+        Thread(board, 388894042, title="Monkeypox General"),
+        Thread(board, 388883227, title="Crusades are underrated"),
+        Thread(board, 388892393, title="Doesnt eat Insects but eats Honey, hypocrisy?"),
+        Thread(board, 388895633),
+        Thread(board, 388895430),
+        Thread(board, 388895780),
+        Thread(board, 388894935),
+        Thread(
+            board,
+            388871008,
+            title="/MOG/ - Monkeypox Outbreak General #128 - First Deaths Brazil/Spain"
+        ),
+        Thread(board, 388892859, title="Detransitioning"),
+        Thread(board, 388894121),
+        Thread(board, 388890979, title="/chug/ - Comfy Happening in Ukraine General #4740"),
+        Thread(board, 388891424)
     ]
     actual = list(fourchan.get_threads(board))
     assert len(expected) == len(actual)
@@ -117,31 +132,31 @@ def test_get_posts(fourchan: FourChan) -> None:
             datetime.fromtimestamp(1658892700, timezone.utc),
             "Apparently this movie smashed German box office records, and all the dialogue is ..NOT.. scripted.",
             is_original_post=True,
-            poster_id="BYagKQXI",
             file=File(
                 "https://i.4cdn.org/pol/1658892700380132.jpg", name="hitler miss kromier.jpg"
-            )
+            ),
+            poster=Poster("BYagKQXI", "United States")
         ),
         Post(
             processed_thread,
             388462302,
             datetime.fromtimestamp(1658892803, timezone.utc),
             ">>388462123\nwhat movie?",
-            poster_id="yzu2QJHE"
+            poster=Poster("yzu2QJHE", "United States")
         ),
         Post(
             processed_thread,
             388462314,
             datetime.fromtimestamp(1658892808, timezone.utc),
             ">>388462123\nFunny movie but there was agenda with this film",
-            poster_id="xF49FJaT"
+            poster=Poster("xF49FJaT", "United States")
         ),
         Post(
             processed_thread,
             388462450,
             datetime.fromtimestamp(1658892887, timezone.utc),
             ">>388462302\nLook who's back.",
-            poster_id="e8uCKNk1"
+            poster=Poster("e8uCKNk1", "Canada")
         )
     ]
     actual = fourchan.get_posts(thread)

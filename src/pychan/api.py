@@ -9,7 +9,7 @@ from ratelimit import sleep_and_retry, limits
 from requests import Response
 
 from pychan.logger import PychanLogger, LogLevel
-from pychan.models import File
+from pychan.models import File, Poster
 from pychan.models import Post, Thread
 
 
@@ -30,21 +30,25 @@ def _sanitize_board(board: str) -> str:
 
 
 def _parse_post_from_html(thread: Thread, post: Any) -> Optional[Post]:
-    op = "op" in post["class"]
-    uid = _text(_find_first(post, ".posteruid span"))
+    timestamp = _find_first(post, ".dateTime")
+    if timestamp is not None and hasattr(timestamp, "data-utc"):
+        timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
+    else:
+        return None
 
     file = None
     file_soup = _find_first(post, ".fileText a")
     if file_soup is not None:
         href = file_soup["href"]
         href = "https:" + href if href.startswith("//") else href
-        file = File(href, name=file_soup.text)
+        file = File(href, file_soup.text)
 
-    timestamp = _find_first(post, ".dateTime")
-    if timestamp is not None and hasattr(timestamp, "data-utc"):
-        timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
-    else:
-        return None
+    poster = None
+    uid = _text(_find_first(post, ".posteruid span"))
+    flag = _find_first(post, ".flag")
+    flag = flag["title"] if flag is not None and hasattr(flag, "title") else None
+    if uid is not None and flag is not None:
+        poster = Poster(uid, flag)
 
     message = _find_first(post, "blockquote.postMessage")
     if message is not None:
@@ -63,9 +67,9 @@ def _parse_post_from_html(thread: Thread, post: Any) -> Optional[Post]:
                 int(message["id"][1:]),
                 timestamp,
                 text,
-                is_original_post=op,
-                poster_id=uid,
-                file=file
+                is_original_post=hasattr(post, "class") and "op" in post["class"],
+                file=file,
+                poster=poster
             )
     else:
         return None
@@ -157,12 +161,16 @@ class FourChan:
 
             if response is not None:
                 soup = BeautifulSoup(response.text, "html.parser")
-                if len(soup.select(".board > .thread")) == 0:
-                    raise ValueError("shit")
                 for thread in soup.select(".board > .thread"):
-                    title = _text(_find_first(thread, ".subject"))
+                    title = _text(_find_first(thread, ".desktop .subject"))
                     thread_number = int(thread["id"][1:])
-                    yield Thread(board, thread_number, title=title)
+                    yield Thread(
+                        board,
+                        thread_number,
+                        title=title,
+                        stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
+                        closed=_find_first(thread, ".op .desktop .closedIcon") is not None
+                    )
             else:
                 self._logger.info((
                     f"Page {p} of /{sanitized_board}/ could not be fetched, so no further threads "
@@ -177,25 +185,29 @@ class FourChan:
         :return: The list of posts currently in the thread. If there are no replies on the thread,
                  the returned list can be expected to have a single element (the original post).
         """
-        t = copy.deepcopy(thread)
-        t.board = _sanitize_board(t.board)
+        loaded_thread = copy.deepcopy(thread)
+        loaded_thread.board = _sanitize_board(loaded_thread.board)
 
-        self._logger.debug(f"Fetching posts for {t}...")
-        response = self._request_helper(f"https://boards.4channel.org/{t.board}/thread/{t.number}/")
+        self._logger.debug(f"Fetching posts for {loaded_thread}...")
+        response = self._request_helper(
+            "https://boards.4channel.org/{}/thread/{}/".format(
+                loaded_thread.board, loaded_thread.number
+            )
+        )
         if response is None:
             return []
 
         soup = BeautifulSoup(response.text, "html.parser")
         ret = []
         for post in soup.select("div.post"):
-            p = _parse_post_from_html(t, post)
+            p = _parse_post_from_html(loaded_thread, post)
             if p is not None:
-                if p.is_original_post and thread.title is None:
-                    title = _text(_find_first(post, ".subject"))
-                    if title is not None:
-                        t.title = title
+                if p.is_original_post:
+                    loaded_thread.title = _text(_find_first(post, ".desktop .subject"))
+                    loaded_thread.stickied = _find_first(post, ".desktop .stickyIcon") is not None
+                    loaded_thread.closed = _find_first(post, ".desktop .closedIcon") is not None
 
-                p.thread = t
+                p.thread = loaded_thread
                 ret.append(p)
 
         return ret
@@ -243,7 +255,12 @@ class FourChan:
                         title = op[0].get("sub", "")
                         title = title if len(title.strip()) > 0 else None
                         thread = Thread(
-                            t.get("board", sanitized_board), int(number[1:]), title=title
+                            t.get("board", sanitized_board),
+                            int(number[1:]),
+                            title=title,
+                            # Closed and stickied threads are not returned in search results
+                            stickied=False,
+                            closed=False
                         )
                         if thread.number not in seen_thread_numbers:
                             new_this_iteration = True
