@@ -49,8 +49,7 @@ reached internally by the generator, it stops returning threads.
 ### Setup
 
 ```python
-from pychan.api import FourChan
-from pychan.logger import LogLevel, PychanLogger
+from pychan import FourChan, LogLevel, PychanLogger
 
 # With all logging disabled (default)
 fourchan = FourChan()
@@ -128,41 +127,49 @@ Also note that all model classes in `pychan` implement the following methods:
 
 ### Threads
 
-| Entity | Field | Type | Example Value(s) |
-| ------ | ----- | ---- | ---------------- |
-| `pychan.models.Thread` | `thread.board` | `str` | `"b"`, `"int"`
-| `pychan.models.Thread` | `thread.number` | `int` | `882774935`, `168484869`
-| `pychan.models.Thread` | `thread.title` | `Optional[str]` | `None`, `"YLYL thread"`
-| `pychan.models.Thread` | `thread.stickied` | `bool` | `True`, `False`
-| `pychan.models.Thread` | `thread.closed` | `bool` | `True`, `False`
+The table below corresponds to the `pychan.models.Thread` class.
+
+| Field | Type | Example Value(s) |
+| ----- | ---- | ---------------- |
+| `thread.board` | `str` | `"b"`, `"int"`
+| `thread.number` | `int` | `882774935`, `168484869`
+| `thread.title` | `Optional[str]` | `None`, `"YLYL thread"`
+| `thread.stickied` | `bool` | `True`, `False`
+| `thread.closed` | `bool` | `True`, `False`
 
 ### Posts
 
-| Entity | Field | Type | Example Value(s) |
-| ------ | ----- | ---- | ---------------- |
-| `pychan.models.Post` | `post.thread` | `Thread` | `pychan.models.Thread`
-| `pychan.models.Post` | `post.number` | `int` | `882774935`, `882774974`
-| `pychan.models.Post` | `post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime) | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
-| `pychan.models.Post` | `post.text` | `str` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
-| `pychan.models.Post` | `post.is_original_post` | `bool` | `True`, `False`
-| `pychan.models.Post` | `post.file` | `Optional[File]` | `None`, `pychan.models.File`
-| `pychan.models.Post` | `post.poster` | `Optional[Poster]` | `None`, `pychan.models.Poster`
+The table below corresponds to the `pychan.models.Post` class.
+
+| Field | Type | Example Value(s) |
+| ----- | ---- | ---------------- |
+`post.thread` | `Thread` | `pychan.models.Thread`
+`post.number` | `int` | `882774935`, `882774974`
+`post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime) | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+`post.text` | `str` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
+`post.is_original_post` | `bool` | `True`, `False`
+`post.file` | `Optional[File]` | `None`, `pychan.models.File`
+`post.poster` | `Optional[Poster]` | `None`, `pychan.models.Poster`
 
 ### Files
 
-| Entity | Field | Type | Example Value(s) |
-| ------ | ----- | ---- | ---------------- |
-| `pychan.models.File` | `file.url` | `str` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
-| `pychan.models.File` | `file.name` | `str` | `"wojak.jpg"`, `"i feel alone.jpg"`
-| `pychan.models.File` | `file.size` | `str` | `"601 KB"`
-| `pychan.models.File` | `file.dimensions` | `tuple[int, int]` | `(1920, 1080)`, `(800, 600)` 
+The table below corresponds to the `pychan.models.File` class.
+
+| Field | Type | Example Value(s) |
+| ----- | ---- | ---------------- |
+| `file.url` | `str` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
+| `file.name` | `str` | `"wojak.jpg"`, `"i feel alone.jpg"`
+| `file.size` | `str` | `"601 KB"`
+| `file.dimensions` | `tuple[int, int]` | `(1920, 1080)`, `(800, 600)` 
 
 ### Posters
 
-| Entity | Field | Type | Example Value(s) |
-| ------ | ----- | ---- | ---------------- |
-| `pychan.models.Poster` | `poster.id` | `str` | `"BYagKQXI"`
-| `pychan.models.Poster` | `poster.flag` | `str` | `"United States"`, `"Canada"`
+The table below corresponds to the `pychan.models.Poster` class.
+
+| Field | Type | Example Value(s) |
+| ----- | ---- | ---------------- |
+| `poster.id` | `str` | `"BYagKQXI"`
+| `poster.flag` | `str` | `"United States"`, `"Canada"`
 
 ## Contributing
 
