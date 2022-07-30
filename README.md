@@ -9,7 +9,7 @@
    4. [Search 4chan](#search-4chan)
    5. [Get All Boards](#get-all-boards)
    6. [Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread)
-4. [Data Available on the Models](#data-available-on-the-models)
+4. [pychan Models](#pychan-models)
    1. [Threads](#threads)
    2. [Posts](#posts)
    3. [Files](#files)
@@ -112,7 +112,7 @@ thread = Thread("int", 168484869)
 posts = fourchan.get_posts(thread)
 ```
 
-## Data Available on the Models
+## pychan Models
 
 The following tables enumerate all the kinds of data that are available on the various models used
 by this library.

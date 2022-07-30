@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+Nothing currently!
+
+## v0.2.2 - 2022-07-30
+
 ### Added
 
 * The `File` model now includes the file's size and dimensions (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* Added more logging to the `FourChan` class (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Changed
+
+* All methods in the `FourChan` class now properly handle "unparsable" boards (by [@cooperwalbrun](https://github.com/cooperwalbrun))
 
 ## v0.2.1 - 2022-07-30
 
