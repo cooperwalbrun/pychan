@@ -5,8 +5,7 @@ from urllib import parse
 import pytest
 import responses
 
-from pychan.api import FourChan
-from pychan.logger import LogLevel, PychanLogger
+from pychan import FourChan, LogLevel, PychanLogger
 from pychan.models import Thread, Post, File, Poster
 
 
