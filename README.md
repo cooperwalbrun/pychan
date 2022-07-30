@@ -107,8 +107,8 @@ from pychan.models import Thread
 thread = Thread("int", 168484869)
 
 # Note: the thread contained within the returned posts will have all applicable metadata (such as
-# title, and sticky status), regardless of whether you provided such data above - pychan will
-# "auto-discover" metadata and include it in the post models' copy of the thread
+# title and sticky status), regardless of whether you provided such data above - pychan will
+# "auto-discover" all metadata and include it in the post models' copy of the thread
 posts = fourchan.get_posts(thread)
 ```
 
@@ -154,6 +154,8 @@ Also note that all model classes in `pychan` implement the following methods:
 | ------ | ----- | ---- | ---------------- |
 | `pychan.models.File` | `file.url` | `str` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
 | `pychan.models.File` | `file.name` | `str` | `"wojak.jpg"`, `"i feel alone.jpg"`
+| `pychan.models.File` | `file.size` | `str` | `"601 KB"`
+| `pychan.models.File` | `file.dimensions` | `tuple[int, int]` | `(1920, 1080)`, `(800, 600)` 
 
 ### Posters
 

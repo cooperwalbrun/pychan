@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-Nothing currently!
+### Added
+
+* The `File` model now includes the file's size and dimensions (by [@cooperwalbrun](https://github.com/cooperwalbrun))
 
 ## v0.2.1 - 2022-07-30
 
