@@ -133,41 +133,60 @@ def test_get_posts(fourchan: FourChan) -> None:
             processed_thread,
             388462123,
             datetime.fromtimestamp(1658892700, timezone.utc),
+            Poster("Anonymous", id="BYagKQXI", flag="United States"),
             "Apparently this movie smashed German box office records, and all the dialogue is ..NOT.. scripted.",
             is_original_post=True,
             file=File(
                 "https://i.4cdn.org/pol/1658892700380132.jpg",
                 "hitler miss kromier.jpg",
                 "106 KB", (800, 600)
-            ),
-            poster=Poster("BYagKQXI", "United States")
+            )
         ),
         Post(
             processed_thread,
             388462302,
             datetime.fromtimestamp(1658892803, timezone.utc),
-            ">>388462123\nwhat movie?",
-            poster=Poster("yzu2QJHE", "United States")
+            Poster("Anonymous", id="yzu2QJHE", flag="United States"),
+            ">>388462123\nwhat movie?"
         ),
         Post(
             processed_thread,
             388462314,
             datetime.fromtimestamp(1658892808, timezone.utc),
-            ">>388462123\nFunny movie but there was agenda with this film",
-            poster=Poster("xF49FJaT", "United States")
+            Poster("Anonymous", id="xF49FJaT", flag="United States"),
+            ">>388462123\nFunny movie but there was agenda with this film"
         ),
         Post(
             processed_thread,
             388462450,
             datetime.fromtimestamp(1658892887, timezone.utc),
-            ">>388462302\nLook who's back.",
-            poster=Poster("e8uCKNk1", "Canada")
+            Poster("Anonymous", id="e8uCKNk1", flag="Canada"),
+            ">>388462302\nLook who's back."
         )
     ]
     actual = fourchan.get_posts(thread)
     assert len(expected) == len(actual)
     for i, post in enumerate(expected):
         assert tuple(post) == tuple(actual[i])
+
+
+@responses.activate
+def test_get_post_from_moderator(fourchan: FourChan) -> None:
+    with open(f"{os.path.dirname(__file__)}/html/pol_moderator_post.html", "r",
+              encoding="utf-8") as file:
+        test_data = file.read()
+
+    responses.add(
+        responses.GET,
+        f"https://boards.4channel.org/pol/thread/259848258/",
+        status=200,
+        body=test_data
+    )
+
+    actual = fourchan.get_posts(Thread("pol", 259848258))
+    assert len(actual) == 1
+    assert actual[0].poster.name == "Anonymous"
+    assert actual[0].poster.is_moderator
 
 
 def test_get_posts_unparsable_board(fourchan: FourChan) -> None:

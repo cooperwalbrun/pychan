@@ -94,12 +94,27 @@ class File:
 
 
 class Poster:
-    def __init__(self, id: str, flag: str):
+    def __init__(
+        self,
+        name: str,
+        *,
+        mod_indicator: bool = False,
+        id: Optional[str] = None,
+        flag: Optional[str] = None
+    ):
+        self.name = name
+        self._mod_indicator = mod_indicator
         self.id = id
         self.flag = flag
 
+    @property
+    def is_moderator(self) -> bool:
+        return self._mod_indicator or self.name != "Anonymous"
+
     def __repr__(self) -> str:
-        return f"Poster({self.id})"
+        return "Poster(name={}, is_moderator={}, id={}, flag={})".format(
+            self.name, self.is_moderator, self.id, self.flag
+        )
 
     def __str__(self) -> str:
         return repr(self)
@@ -109,20 +124,25 @@ class Poster:
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Poster):
-            return self.id == other.id
+            return self.name == other.name and self.id == other.id
         else:
             return False
 
     def __iter__(self) -> Generator[Any, None, None]:
         # We implement __iter__ so this class can be serialized as a tuple
-        for field in [self.id, self.flag]:
+        for field in [self.name, self._mod_indicator, self.id, self.flag]:
             yield field
 
     def __copy__(self):
-        return Poster(self.id, self.flag)
+        return Poster(self.name, mod_indicator=self._mod_indicator, id=self.id, flag=self.flag)
 
     def __deepcopy__(self, memo: dict[Any, Any]):
-        return Poster(copy.deepcopy(self.id, memo), copy.deepcopy(self.flag, memo))
+        return Poster(
+            copy.deepcopy(self.name, memo),
+            mod_indicator=self._mod_indicator,
+            id=copy.deepcopy(self.id, memo),
+            flag=copy.deepcopy(self.flag, memo)
+        )
 
 
 class Post:
@@ -131,22 +151,19 @@ class Post:
         thread: Thread,
         number: int,
         timestamp: datetime,
+        poster: Poster,
         text: str,
         *,
         is_original_post: bool = False,
-        file: Optional[File] = None,
-        poster: Optional[Poster] = None
+        file: Optional[File] = None
     ):
         self.thread = thread
         self.number = number
         self.timestamp = timestamp
+        self.poster = poster
         self.text = text
         self.is_original_post = is_original_post
         self.file = file
-        self.poster = poster
-
-    def serialized_text(self) -> str:
-        return self.text.replace("\n", "\\n")
 
     def __repr__(self) -> str:
         return "Post(https://boards.4channel.org/{})".format(
@@ -167,18 +184,16 @@ class Post:
 
     def __iter__(self) -> Generator[Any, None, None]:
         # We implement __iter__ so this class can be serialized as a tuple
-        fields = list(self.thread) + [
-            self.number,
-            self.timestamp,
-            self.text,
-            self.is_original_post,
-            None if self.file is None else self.file.url,
-            None if self.file is None else self.file.name,
-            None if self.file is None else self.file.size,
-            None if self.file is None else self.file.dimensions,
-            None if self.poster is None else self.poster.id,
-            None if self.poster is None else self.poster.flag
-        ]
+        fields = list(self.thread) + [self.number, self.timestamp] + \
+                 list(self.poster) + \
+                 [
+                      self.text,
+                      self.is_original_post,
+                      None if self.file is None else self.file.url,
+                      None if self.file is None else self.file.name,
+                      None if self.file is None else self.file.size,
+                      None if self.file is None else self.file.dimensions
+                  ]
         for field in fields:
             yield field
 
@@ -187,10 +202,10 @@ class Post:
             self.thread,
             self.number,
             self.timestamp,
+            self.poster,
             self.text,
             is_original_post=self.is_original_post,
-            file=self.file,
-            poster=self.poster
+            file=self.file
         )
 
     def __deepcopy__(self, memo: dict[Any, Any]):
@@ -198,8 +213,8 @@ class Post:
             copy.deepcopy(self.thread, memo),
             self.number,
             copy.deepcopy(self.timestamp, memo),
+            copy.deepcopy(self.poster, memo),
             copy.deepcopy(self.text, memo),
             is_original_post=self.is_original_post,
-            file=copy.deepcopy(self.file, memo),
-            poster=copy.deepcopy(self.poster, memo)
+            file=copy.deepcopy(self.file, memo)
         )
