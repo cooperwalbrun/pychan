@@ -133,7 +133,9 @@ def test_get_posts(fourchan: FourChan) -> None:
             "Apparently this movie smashed German box office records, and all the dialogue is ..NOT.. scripted.",
             is_original_post=True,
             file=File(
-                "https://i.4cdn.org/pol/1658892700380132.jpg", name="hitler miss kromier.jpg"
+                "https://i.4cdn.org/pol/1658892700380132.jpg",
+                "hitler miss kromier.jpg",
+                "106 KB", (800, 600)
             ),
             poster=Poster("BYagKQXI", "United States")
         ),

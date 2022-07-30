@@ -1,4 +1,5 @@
 import copy
+import re
 from datetime import datetime, timezone
 from typing import Optional, Generator, Any
 from uuid import uuid4
@@ -29,37 +30,51 @@ def _sanitize_board(board: str) -> str:
     return board.lower().replace("/", "").strip()
 
 
-def _parse_post_from_html(thread: Thread, post: Any) -> Optional[Post]:
-    timestamp = _find_first(post, ".dateTime")
+def _parse_file_from_html(post_html_element: Any) -> Optional[File]:
+    file_text = _find_first(post_html_element, ".fileText")
+    file_anchor = _find_first(post_html_element, ".fileText a")
+    if file_text is not None and file_anchor is not None:
+        href = file_anchor["href"]
+        href = "https:" + href if href.startswith("//") else href
+        print(file_text.text)
+        metadata = re.search(r"\((.+), ([0-9]+x[0-9]+)\)", file_text.text)
+        if len(metadata.groups()) > 1:
+            size = metadata.group(1)
+            dimensions = metadata.group(2).split("x")
+            return File(href, file_anchor.text, size, (int(dimensions[0]), int(dimensions[1])))
+        else:
+            return None
+    else:
+        return None
+
+
+def _parse_poster_from_html(post_html_element: Any) -> Optional[Poster]:
+    uid = _text(_find_first(post_html_element, ".posteruid span"))
+    flag = _find_first(post_html_element, ".flag")
+    flag = flag["title"] if flag is not None and hasattr(flag, "title") else None
+    if uid is not None and flag is not None:
+        return Poster(uid, flag)
+    else:
+        return None
+
+
+def _parse_post_from_html(thread: Thread, post_html_element: Any) -> Optional[Post]:
+    timestamp = _find_first(post_html_element, ".dateTime")
     if timestamp is not None and hasattr(timestamp, "data-utc"):
         timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
     else:
         return None
 
-    file = None
-    file_soup = _find_first(post, ".fileText a")
-    if file_soup is not None:
-        href = file_soup["href"]
-        href = "https:" + href if href.startswith("//") else href
-        file = File(href, file_soup.text)
-
-    poster = None
-    uid = _text(_find_first(post, ".posteruid span"))
-    flag = _find_first(post, ".flag")
-    flag = flag["title"] if flag is not None and hasattr(flag, "title") else None
-    if uid is not None and flag is not None:
-        poster = Poster(uid, flag)
-
-    message = _find_first(post, "blockquote.postMessage")
+    message = _find_first(post_html_element, "blockquote.postMessage")
     if message is not None:
         line_break_placeholder = str(uuid4())
-
         # The following approach to preserve HTML line breaks in the final post text is
         # based on this: https://stackoverflow.com/a/61423104
         for line_break in message.select("br"):
             line_break.replaceWith(line_break_placeholder)
-
         text = message.text.replace(line_break_placeholder, "\n")
+
+        op = hasattr(post_html_element, "class") and "op" in post_html_element["class"]
 
         if len(text) > 0:
             return Post(
@@ -67,9 +82,9 @@ def _parse_post_from_html(thread: Thread, post: Any) -> Optional[Post]:
                 int(message["id"][1:]),
                 timestamp,
                 text,
-                is_original_post=hasattr(post, "class") and "op" in post["class"],
-                file=file,
-                poster=poster
+                is_original_post=op,
+                file=_parse_file_from_html(post_html_element),
+                poster=_parse_poster_from_html(post_html_element)
             )
     else:
         return None
@@ -206,8 +221,8 @@ class FourChan:
                     loaded_thread.title = _text(_find_first(post, ".desktop .subject"))
                     loaded_thread.stickied = _find_first(post, ".desktop .stickyIcon") is not None
                     loaded_thread.closed = _find_first(post, ".desktop .closedIcon") is not None
+                    p.thread = loaded_thread
 
-                p.thread = loaded_thread
                 ret.append(p)
 
         return ret
@@ -250,9 +265,9 @@ class FourChan:
             if response is not None:
                 for t in response.json().get("threads", []):
                     number = t.get("thread", "")
-                    op = t.get("posts", [])
-                    if len(number) > 1 and len(op) > 0:
-                        title = op[0].get("sub", "")
+                    posts = t.get("posts", [])
+                    if len(number) > 1 and len(posts) > 0:
+                        title = posts[0].get("sub", "")
                         title = title if len(title.strip()) > 0 else None
                         thread = Thread(
                             t.get("board", sanitized_board),

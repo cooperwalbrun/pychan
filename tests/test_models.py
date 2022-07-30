@@ -16,7 +16,7 @@ def test_thread_equality() -> None:
 
     # Test comparisons with non-Thread data types
     post = Post(t1, 1337, _TIMESTAMP, "test")
-    file = File("test", "test")
+    file = File("test", "test", "1337 KB", (1920, 1080))
     poster = Poster("test", "test")
     assert t1 != post
     assert t1 != file
@@ -34,7 +34,7 @@ def test_post_equality() -> None:
     assert p1 != p3
 
     # Test comparisons with non-Post data types
-    file = File("test", "test")
+    file = File("test", "test", "1337 KB", (1920, 1080))
     poster = Poster("test", "test")
     assert p1 != t1
     assert p1 != file
@@ -42,9 +42,9 @@ def test_post_equality() -> None:
 
 
 def test_file_equality() -> None:
-    f1 = File("test", "test")
-    f2 = File("test", "test2")
-    f3 = File("test2", "test")
+    f1 = File("test", "test", "1337 KB", (1920, 1080))
+    f2 = File("test", "test2", "1337 KB", (1920, 1080))
+    f3 = File("test2", "test", "1337 KB", (1920, 1080))
     assert f1 == f1
     assert f1 == f2
     assert f1 != f3
@@ -69,15 +69,15 @@ def test_poster_equality() -> None:
     # Test comparisons with non-Poster data types
     thread = Thread("b", 1337)
     post = Post(thread, 1337, _TIMESTAMP, "test")
-    file = File("test", "test")
+    file = File("test", "test", "1337 KB", (1920, 1080))
     assert p1 != thread
     assert p1 != post
     assert p1 != file
 
 
 def test_serialization() -> None:
-    file = File("test", "test")
-    assert tuple(file) == ("test", "test")
+    file = File("test", "test", "1337 KB", (1920, 1080))
+    assert tuple(file) == ("test", "test", "1337 KB", (1920, 1080))
 
     poster = Poster("test", "test")
     assert tuple(poster) == ("test", "test")
@@ -89,13 +89,22 @@ def test_serialization() -> None:
         post = Post(thread, 1337, _TIMESTAMP, "test")
         # yapf: disable
         assert tuple(post) == tuple(thread) + (
-            1337, _TIMESTAMP, "test", False, None, None, None, None
+            1337, _TIMESTAMP, "test", False, None, None, None, None, None, None
         )
         # yapf: enable
 
         post = Post(thread, 1337, _TIMESTAMP, "test", file=file, poster=poster)
         assert tuple(post) == tuple(thread) + (
-            1337, _TIMESTAMP, "test", False, file.url, file.name, poster.id, poster.flag
+            1337,
+            _TIMESTAMP,
+            "test",
+            False,
+            file.url,
+            file.name,
+            file.size,
+            file.dimensions,
+            poster.id,
+            poster.flag
         )
 
 
@@ -107,7 +116,7 @@ def test_copying() -> None:
     assert thread is not thread_copy
     assert thread is not thread_deepcopy
 
-    file = File("test", "test")
+    file = File("test", "test", "1337 KB", (1920, 1080))
     file_copy = copy.copy(file)
     file_deepcopy = copy.deepcopy(file)
     assert file == file_copy == file_deepcopy
@@ -127,16 +136,3 @@ def test_copying() -> None:
     assert post == post_copy == post_deepcopy
     assert post is not post_copy
     assert post is not post_deepcopy
-    # The assertions below test the behavior of copy versus deepcopy on the Post class
-    assert post.thread == post_copy.thread == post_deepcopy.thread
-    assert post.thread is post_copy.thread
-    assert post.thread is not post_deepcopy.thread
-    assert post.timestamp == post_copy.timestamp == post_deepcopy.timestamp
-    assert post.timestamp is post_copy.timestamp
-    assert post.timestamp is not post_deepcopy.timestamp
-    assert post.file == post_copy.file == post_deepcopy.file
-    assert post.file is post_copy.file
-    assert post.file is not post_deepcopy.file
-    assert post.poster == post_copy.poster == post_deepcopy.poster
-    assert post.poster is post_copy.poster
-    assert post.poster is not post_deepcopy.poster
