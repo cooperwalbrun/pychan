@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.2.0 - 2022-07-29
+
+### Added
+
+* Implemented the `search()` method, which leverages 4chan's native search functionality internally (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* Added docstrings to all user-facing functions (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Changed
+
+* Changed the `get_all_threads_for_board()` method name to `get_threads()` (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Removed
+
+* Removed the opinionated `get_all_threads()` method to simplify the code base and keep its scope more appropriate for its desired intent (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.1.1 - 2022-07-27
 
 ### Changed
