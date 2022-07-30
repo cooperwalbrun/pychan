@@ -1,6 +1,9 @@
 import copy
+from datetime import datetime, timezone
 
 from pychan.models import Thread, Post, File
+
+_TIMESTAMP = datetime.fromtimestamp(0, timezone.utc)
 
 
 def test_thread_equality() -> None:
@@ -12,7 +15,7 @@ def test_thread_equality() -> None:
     assert t1 != t3
 
     # Test comparisons with non-Thread data types
-    post = Post(t1, 1337, "test")
+    post = Post(t1, 1337, _TIMESTAMP, "test")
     file = File("test", "test")
     assert t1 != post
     assert t1 != file
@@ -21,9 +24,9 @@ def test_thread_equality() -> None:
 def test_post_equality() -> None:
     t1 = Thread("b", 1337)
     t2 = Thread("b", 1338)
-    p1 = Post(t1, 1337, "test")
-    p2 = Post(t1, 1338, "test")
-    p3 = Post(t2, 1337, "test")
+    p1 = Post(t1, 1337, _TIMESTAMP, "test")
+    p2 = Post(t1, 1338, _TIMESTAMP, "test")
+    p3 = Post(t2, 1337, _TIMESTAMP, "test")
     assert p1 == p1
     assert p1 != p2
     assert p1 != p3
@@ -44,7 +47,7 @@ def test_file_equality() -> None:
 
     # Test comparisons with non-File data types
     thread = Thread("b", 1337)
-    post = Post(thread, 1337, "test")
+    post = Post(thread, 1337, _TIMESTAMP, "test")
     assert f1 != thread
     assert f1 != post
 
@@ -57,11 +60,15 @@ def test_serialization() -> None:
         file = File("test", text)
         assert tuple(file) == ("test", text)
 
-        post = Post(thread, 1337, "test", poster_id=text)
-        assert tuple(post) == (thread.board, thread.number, 1337, "test", False, text, None)
+        post = Post(thread, 1337, _TIMESTAMP, "test", poster_id=text)
+        assert tuple(post) == (
+            thread.board, thread.number, 1337, _TIMESTAMP, "test", False, text, None
+        )
 
-        post = Post(thread, 1337, "test", poster_id=text, file=file)
-        assert tuple(post) == (thread.board, thread.number, 1337, "test", False, text, file.url)
+        post = Post(thread, 1337, _TIMESTAMP, "test", poster_id=text, file=file)
+        assert tuple(post) == (
+            thread.board, thread.number, 1337, _TIMESTAMP, "test", False, text, file.url
+        )
 
 
 def test_copying() -> None:
@@ -79,7 +86,7 @@ def test_copying() -> None:
     assert file is not file_copy
     assert file is not file_deepcopy
 
-    post = Post(thread, 1337, "test", poster_id="test")
+    post = Post(thread, 1337, _TIMESTAMP, "test", poster_id="test")
     post_copy = copy.copy(post)
     post_deepcopy = copy.deepcopy(post)
     assert post == post_copy == post_deepcopy
@@ -88,3 +95,6 @@ def test_copying() -> None:
     assert post.thread == post_copy.thread == post_deepcopy.thread
     assert post.thread is post_copy.thread
     assert post.thread is not post_deepcopy.thread
+    assert post.timestamp == post_copy.timestamp == post_deepcopy.timestamp
+    assert post.timestamp is post_copy.timestamp
+    assert post.timestamp is not post_deepcopy.timestamp

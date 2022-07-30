@@ -71,6 +71,8 @@ by this library.
 | `pychan.models.Thread` | `thread.title` | `None`, `"YLYL thread"`
 | `pychan.models.Post` | `post.thread` | `pychan.models.Thread`
 | `pychan.models.Post` | `post.number` | `882774935`, `882774974`
+| `pychan.models.Post` | `post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+| `pychan.models.Post` | `post.text` | the text of the post
 | `pychan.models.Post` | `post.is_original_post` | `True`, `False`
 | `pychan.models.Post` | `post.poster_id` | `None`, `"BYagKQXI"`
 | `pychan.models.Post` | `post.file` | `None`, `pychan.models.File`

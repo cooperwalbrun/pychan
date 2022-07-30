@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.2.1 - 2022-07-30
+
+### Added
+
+* The `Post` model now includes the post's timestamp in the `timestamp` field (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.2.0 - 2022-07-29
 
 ### Added

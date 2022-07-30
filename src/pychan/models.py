@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime
 from typing import Any, Optional, Generator
 
 
@@ -72,6 +73,7 @@ class Post:
         self,
         thread: Thread,
         number: int,
+        timestamp: datetime,
         text: str,
         *,
         is_original_post: bool = False,
@@ -80,6 +82,7 @@ class Post:
     ):
         self.thread = thread
         self.number = number
+        self.timestamp = timestamp
         self.text = text
         self.is_original_post = is_original_post
         self.poster_id = poster_id
@@ -111,6 +114,7 @@ class Post:
             self.thread.board,
             self.thread.number,
             self.number,
+            self.timestamp,
             self.text,
             self.is_original_post,
             self.poster_id,
@@ -123,6 +127,7 @@ class Post:
         return Post(
             self.thread,
             self.number,
+            self.timestamp,
             self.text,
             is_original_post=self.is_original_post,
             poster_id=self.poster_id,
@@ -133,6 +138,7 @@ class Post:
         return Post(
             copy.deepcopy(self.thread, memo),
             self.number,
+            copy.deepcopy(self.timestamp, memo),
             self.text,
             is_original_post=self.is_original_post,
             poster_id=self.poster_id,

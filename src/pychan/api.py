@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime, timezone
 from typing import Optional, Generator, Any
 from uuid import uuid4
 
@@ -30,7 +31,7 @@ def _sanitize_board(board: str) -> str:
 
 def _parse_post_from_html(thread: Thread, post: Any) -> Optional[Post]:
     op = "op" in post["class"]
-    uid = _text(_find_first(post, "span.posteruid span"))
+    uid = _text(_find_first(post, ".posteruid span"))
 
     file = None
     file_soup = _find_first(post, ".fileText a")
@@ -39,8 +40,13 @@ def _parse_post_from_html(thread: Thread, post: Any) -> Optional[Post]:
         href = "https:" + href if href.startswith("//") else href
         file = File(href, name=file_soup.text)
 
-    message = _find_first(post, "blockquote.postMessage")
+    timestamp = _find_first(post, ".dateTime")
+    if timestamp is not None and hasattr(timestamp, "data-utc"):
+        timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
+    else:
+        return None
 
+    message = _find_first(post, "blockquote.postMessage")
     if message is not None:
         line_break_placeholder = str(uuid4())
 
@@ -49,14 +55,20 @@ def _parse_post_from_html(thread: Thread, post: Any) -> Optional[Post]:
         for line_break in message.select("br"):
             line_break.replaceWith(line_break_placeholder)
 
-        text = message.text.replace(line_break_placeholder, "\n").strip()
+        text = message.text.replace(line_break_placeholder, "\n")
 
         if len(text) > 0:
             return Post(
-                thread, int(message["id"][1:]), text, is_original_post=op, poster_id=uid, file=file
+                thread,
+                int(message["id"][1:]),
+                timestamp,
+                text,
+                is_original_post=op,
+                poster_id=uid,
+                file=file
             )
-
-    return None
+    else:
+        return None
 
 
 class FourChan:

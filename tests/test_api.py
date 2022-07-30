@@ -1,4 +1,5 @@
 import os
+from datetime import timezone, datetime
 from urllib import parse
 
 import pytest
@@ -109,10 +110,11 @@ def test_get_posts(fourchan: FourChan) -> None:
         body=test_data
     )
 
-    expected_posts = [
+    expected = [
         Post(
             processed_thread,
             388462123,
+            datetime.fromtimestamp(1658892700, timezone.utc),
             "Apparently this movie smashed German box office records, and all the dialogue is ..NOT.. scripted.",
             is_original_post=True,
             poster_id="BYagKQXI",
@@ -120,23 +122,37 @@ def test_get_posts(fourchan: FourChan) -> None:
                 "https://i.4cdn.org/pol/1658892700380132.jpg", name="hitler miss kromier.jpg"
             )
         ),
-        Post(processed_thread, 388462302, ">>388462123\nwhat movie?", poster_id="yzu2QJHE"),
+        Post(
+            processed_thread,
+            388462302,
+            datetime.fromtimestamp(1658892803, timezone.utc),
+            ">>388462123\nwhat movie?",
+            poster_id="yzu2QJHE"
+        ),
         Post(
             processed_thread,
             388462314,
+            datetime.fromtimestamp(1658892808, timezone.utc),
             ">>388462123\nFunny movie but there was agenda with this film",
             poster_id="xF49FJaT"
         ),
-        Post(processed_thread, 388462450, ">>388462302\nLook who's back.", poster_id="e8uCKNk1")
+        Post(
+            processed_thread,
+            388462450,
+            datetime.fromtimestamp(1658892887, timezone.utc),
+            ">>388462302\nLook who's back.",
+            poster_id="e8uCKNk1"
+        )
     ]
-    actual_posts = fourchan.get_posts(thread)
-    for i, post in enumerate(expected_posts):
-        assert tuple(post) == tuple(actual_posts[i])
-        assert tuple(post.thread) == tuple(actual_posts[i].thread)
+    actual = fourchan.get_posts(thread)
+    assert len(expected) == len(actual)
+    for i, post in enumerate(expected):
+        assert tuple(post) == tuple(actual[i])
+        assert tuple(post.thread) == tuple(actual[i].thread)
         if post.file is None:
-            assert post.file == actual_posts[i].file
+            assert post.file == actual[i].file
         else:
-            assert tuple(post.file) == tuple(actual_posts[i].file)
+            assert tuple(post.file) == tuple(actual[i].file)
 
 
 def test_get_posts_http_errors(fourchan: FourChan) -> None:
