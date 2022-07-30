@@ -17,6 +17,10 @@ Nothing currently!
 * The `Thread` model now has `stickied` and `closed` boolean fields (by [@cooperwalbrun](https://github.com/cooperwalbrun))
 * Created the `Poster` model and updated the `Post` model to use it (by [@cooperwalbrun](https://github.com/cooperwalbrun))
 
+### Fixed
+
+* Fixed thread titles being truncated and ellipsized (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.2.0 - 2022-07-29
 
 ### Added
