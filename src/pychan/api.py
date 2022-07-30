@@ -30,70 +30,83 @@ def _sanitize_board(board: str) -> str:
     return board.lower().replace("/", "").strip()
 
 
-def _parse_file_from_html(post_html_element: Any) -> Optional[File]:
-    file_text = _find_first(post_html_element, ".fileText")
-    file_anchor = _find_first(post_html_element, ".fileText a")
-    if file_text is not None and file_anchor is not None:
-        href = file_anchor["href"]
-        href = "https:" + href if href.startswith("//") else href
-        print(file_text.text)
-        metadata = re.search(r"\((.+), ([0-9]+x[0-9]+)\)", file_text.text)
-        if len(metadata.groups()) > 1:
-            size = metadata.group(1)
-            dimensions = metadata.group(2).split("x")
-            return File(href, file_anchor.text, size, (int(dimensions[0]), int(dimensions[1])))
-        else:
-            return None
-    else:
-        return None
-
-
-def _parse_poster_from_html(post_html_element: Any) -> Optional[Poster]:
-    uid = _text(_find_first(post_html_element, ".posteruid span"))
-    flag = _find_first(post_html_element, ".flag")
-    flag = flag["title"] if flag is not None and hasattr(flag, "title") else None
-    if uid is not None and flag is not None:
-        return Poster(uid, flag)
-    else:
-        return None
-
-
-def _parse_post_from_html(thread: Thread, post_html_element: Any) -> Optional[Post]:
-    timestamp = _find_first(post_html_element, ".dateTime")
-    if timestamp is not None and hasattr(timestamp, "data-utc"):
-        timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
-    else:
-        return None
-
-    message = _find_first(post_html_element, "blockquote.postMessage")
-    if message is not None:
-        line_break_placeholder = str(uuid4())
-        # The following approach to preserve HTML line breaks in the final post text is
-        # based on this: https://stackoverflow.com/a/61423104
-        for line_break in message.select("br"):
-            line_break.replaceWith(line_break_placeholder)
-        text = message.text.replace(line_break_placeholder, "\n")
-
-        op = hasattr(post_html_element, "class") and "op" in post_html_element["class"]
-
-        if len(text) > 0:
-            return Post(
-                thread,
-                int(message["id"][1:]),
-                timestamp,
-                text,
-                is_original_post=op,
-                file=_parse_file_from_html(post_html_element),
-                poster=_parse_poster_from_html(post_html_element)
-            )
-    else:
-        return None
-
-
 class FourChan:
+    _UNPARSABLE_BOARDS = ["f"]
+
     def __init__(self, logger: Optional[PychanLogger] = None):
         self._agent = str(uuid4())
         self._logger = logger if logger is not None else PychanLogger(LogLevel.OFF)
+
+    def _parse_file_from_html(self, post_html_element: Any) -> Optional[File]:
+        file_text = _find_first(post_html_element, ".fileText")
+        file_anchor = _find_first(post_html_element, ".fileText a")
+        if file_text is not None and file_anchor is not None:
+            href = file_anchor["href"]
+            href = "https:" + href if href.startswith("//") else href
+            print(file_text.text)
+            metadata = re.search(r"\((.+), ([0-9]+x[0-9]+)\)", file_text.text)
+            if len(metadata.groups()) > 1:
+                size = metadata.group(1)
+                dimensions = metadata.group(2).split("x")
+                return File(href, file_anchor.text, size, (int(dimensions[0]), int(dimensions[1])))
+            else:
+                self._logger.warn(f"File metadata could not be parsed from {file_text.text}")
+                return None
+        else:
+            self._logger.debug(f"No file was discovered in {post_html_element}")
+            return None
+
+    def _parse_poster_from_html(self, post_html_element: Any) -> Optional[Poster]:
+        uid = _text(_find_first(post_html_element, ".posteruid span"))
+        flag = _find_first(post_html_element, ".flag")
+        flag = flag["title"] if flag is not None and hasattr(flag, "title") else None
+        if uid is not None and flag is not None:
+            return Poster(uid, flag)
+        else:
+            self._logger.debug(f"No poster was discovered in {post_html_element}")
+            return None
+
+    def _parse_post_from_html(self, thread: Thread, post_html_element: Any) -> Optional[Post]:
+        timestamp = _find_first(post_html_element, ".dateTime")
+        if timestamp is not None and hasattr(timestamp, "data-utc"):
+            timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
+        else:
+            self._logger.warn(f"No post timestamp was discovered in {post_html_element}")
+            return None
+
+        message = _find_first(post_html_element, "blockquote.postMessage")
+        if message is not None:
+            line_break_placeholder = str(uuid4())
+            # The following approach to preserve HTML line breaks in the final post text is
+            # based on this: https://stackoverflow.com/a/61423104
+            for line_break in message.select("br"):
+                line_break.replaceWith(line_break_placeholder)
+            text = message.text.replace(line_break_placeholder, "\n")
+
+            op = hasattr(post_html_element, "class") and "op" in post_html_element["class"]
+
+            if len(text) > 0:
+                return Post(
+                    thread,
+                    int(message["id"][1:]),
+                    timestamp,
+                    text,
+                    is_original_post=op,
+                    file=self._parse_file_from_html(post_html_element),
+                    poster=self._parse_poster_from_html(post_html_element)
+                )
+        else:
+            self._logger.warn(f"No post text was discovered in {post_html_element}")
+            return None
+
+    def _is_unparsable_board(self, board: str) -> bool:
+        if board in self._UNPARSABLE_BOARDS:
+            self._logger.warn(
+                f"Detected that you are trying to interact with an unparsable board: {board}"
+            )
+            return True
+        else:
+            return False
 
     @sleep_and_retry
     @limits(calls=1, period=0.75)
@@ -129,8 +142,6 @@ class FourChan:
         :return: The board names (without slashes in their names) currently available on 4chan.
         """
 
-        board_blacklist = ["f"]
-
         ret = []
         self._logger.info("Fetching all boards from 4chan...")
 
@@ -144,7 +155,7 @@ class FourChan:
             if board_list is not None:
                 for anchor in board_list.select("a"):
                     board = anchor.text
-                    if board not in board_blacklist:
+                    if board not in self._UNPARSABLE_BOARDS:
                         ret.append(board)
 
         self._logger.info(f"Fetched {len(ret)} board(s) from 4chan")
@@ -161,6 +172,8 @@ class FourChan:
                  board has been returned.
         """
         sanitized_board = _sanitize_board(board)
+        if self._is_unparsable_board(sanitized_board):
+            return
 
         def get(page_number: int) -> Optional[Response]:
             suffix = f"/{page_number}" if page_number > 1 else ""
@@ -203,6 +216,9 @@ class FourChan:
         loaded_thread = copy.deepcopy(thread)
         loaded_thread.board = _sanitize_board(loaded_thread.board)
 
+        if self._is_unparsable_board(loaded_thread.board):
+            return []
+
         self._logger.debug(f"Fetching posts for {loaded_thread}...")
         response = self._request_helper(
             "https://boards.4channel.org/{}/thread/{}/".format(
@@ -215,7 +231,7 @@ class FourChan:
         soup = BeautifulSoup(response.text, "html.parser")
         ret = []
         for post in soup.select("div.post"):
-            p = _parse_post_from_html(loaded_thread, post)
+            p = self._parse_post_from_html(loaded_thread, post)
             if p is not None:
                 if p.is_original_post:
                     loaded_thread.title = _text(_find_first(post, ".desktop .subject"))
@@ -239,6 +255,9 @@ class FourChan:
                  results has been returned.
         """
         sanitized_board = _sanitize_board(board)
+        if self._is_unparsable_board(sanitized_board):
+            return
+
         query = text.strip()
 
         def get(o: int) -> Optional[Response]:
@@ -281,3 +300,7 @@ class FourChan:
                             new_this_iteration = True
                             seen_thread_numbers.add(thread.number)
                             yield thread
+                        else:
+                            self._logger.debug(
+                                f"Skipping a duplicate thread in the search results: {thread}"
+                            )

@@ -87,6 +87,10 @@ def test_get_threads(fourchan: FourChan) -> None:
         assert tuple(thread) == tuple(actual[i])
 
 
+def test_get_thread_unparsable_board(fourchan: FourChan) -> None:
+    assert len(list(fourchan.get_threads("f"))) == 0
+
+
 def test_get_threads_http_errors(fourchan: FourChan) -> None:
     board = "n"
 
@@ -167,6 +171,11 @@ def test_get_posts(fourchan: FourChan) -> None:
         assert tuple(post) == tuple(actual[i])
 
 
+def test_get_posts_unparsable_board(fourchan: FourChan) -> None:
+    thread = Thread("f", 0)
+    assert len(fourchan.get_posts(thread)) == 0
+
+
 def test_get_posts_http_errors(fourchan: FourChan) -> None:
     thread = Thread("pol", 388462123, title="No.1 Hitler movie in Germany?")
 
@@ -219,6 +228,10 @@ def test_search(fourchan: FourChan) -> None:
     assert len(expected) == len(actual)
     for i, thread in enumerate(expected):
         assert tuple(thread) == tuple(actual[i])
+
+
+def test_search_unparsable_board(fourchan: FourChan) -> None:
+    assert len(list(fourchan.search(board="f", text=""))) == 0
 
 
 def test_search_http_errors(fourchan: FourChan) -> None:
