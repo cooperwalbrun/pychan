@@ -50,18 +50,20 @@ class FourChan:
                 dimensions = metadata.group(2).split("x")
                 return File(href, file_anchor.text, size, (int(dimensions[0]), int(dimensions[1])))
             else:
-                self._logger.warn(f"File metadata could not be parsed from {file_text.text}")
+                self._logger.error(f"No file metadata could not be parsed from {file_text.text}")
                 return None
         else:
             self._logger.debug(f"No file was discovered in {post_html_element}")
             return None
 
     def _parse_poster_from_html(self, post_html_element: Any) -> Optional[Poster]:
+        name = _text(_find_first(post_html_element, ".nameBlock > .name"))
+        mod = _find_first(post_html_element, ".nameBlock > .id_mod") is not None
         uid = _text(_find_first(post_html_element, ".posteruid span"))
         flag = _find_first(post_html_element, ".flag")
         flag = flag["title"] if flag is not None and hasattr(flag, "title") else None
-        if uid is not None and flag is not None:
-            return Poster(uid, flag)
+        if name is not None:
+            return Poster(name, mod_indicator=mod, id=uid, flag=flag)
         else:
             self._logger.debug(f"No poster was discovered in {post_html_element}")
             return None
@@ -71,7 +73,12 @@ class FourChan:
         if timestamp is not None and hasattr(timestamp, "data-utc"):
             timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
         else:
-            self._logger.warn(f"No post timestamp was discovered in {post_html_element}")
+            self._logger.error(f"No post timestamp was discovered in {post_html_element}")
+            return None
+
+        poster = self._parse_poster_from_html(post_html_element)
+        if poster is None:
+            self._logger.error(f"No poster was discovered in {post_html_element}")
             return None
 
         message = _find_first(post_html_element, "blockquote.postMessage")
@@ -90,20 +97,22 @@ class FourChan:
                     thread,
                     int(message["id"][1:]),
                     timestamp,
+                    poster,
                     text,
                     is_original_post=op,
-                    file=self._parse_file_from_html(post_html_element),
-                    poster=self._parse_poster_from_html(post_html_element)
+                    file=self._parse_file_from_html(post_html_element)
                 )
         else:
-            self._logger.warn(f"No post text was discovered in {post_html_element}")
+            self._logger.error(f"No post text was discovered in {post_html_element}")
             return None
 
     def _is_unparsable_board(self, board: str) -> bool:
         if board in self._UNPARSABLE_BOARDS:
-            self._logger.warn(
-                f"Detected that you are trying to interact with an unparsable board: {board}"
-            )
+            self._logger.warn((
+                f"Detected that you are trying to interact with an unparsable board: {board}. "
+                f"To avoid errors and undefined behavior, pychan will not attempt to interact with "
+                f"this board."
+            ))
             return True
         else:
             return False
@@ -129,7 +138,12 @@ class FourChan:
         if response.status_code == 200:
             return response
         elif response.status_code == 404:
-            self._logger.warn(f"Received a 404 status from {url}")
+            # We have to swallow 404 errors because threads can be deleted in real-time between
+            # HTTP requests pychan sends, and we do not want to choke when that happens. Imagine the
+            # following scenario for example: you fetch the threads for a board, then one of those
+            # threads gets deleted, then you try to fetch the posts for that thread; this would lead
+            # to a 404.
+            self._logger.warn(f"Received a 404 status code from {url}")
             return None
         else:
             self._logger.error(f"Unexpected status code {response.status_code} when fetching {url}")

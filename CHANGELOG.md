@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+Nothing currently!
+
+## v0.2.3 - 2022-07-30
+
 ### Added
 
 * The `FourChan`, `LogLevel`, and `PychanLogger` entities can now be imported directly from `pychan` (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* Added the `name` and `is_moderator` fields to the `Poster` model (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Changed
+
+* The `poster` field on the `Post` model is no longer optional (by [@cooperwalbrun](https://github.com/cooperwalbrun))
 
 ## v0.2.2 - 2022-07-30
 

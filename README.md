@@ -146,10 +146,21 @@ The table below corresponds to the `pychan.models.Post` class.
 `post.thread` | `Thread` | `pychan.models.Thread`
 `post.number` | `int` | `882774935`, `882774974`
 `post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime) | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+`post.poster` | `Poster` | `pychan.models.Poster`
 `post.text` | `str` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
 `post.is_original_post` | `bool` | `True`, `False`
 `post.file` | `Optional[File]` | `None`, `pychan.models.File`
-`post.poster` | `Optional[Poster]` | `None`, `pychan.models.Poster`
+
+### Posters
+
+The table below corresponds to the `pychan.models.Poster` class.
+
+| Field | Type | Example Value(s) |
+| ----- | ---- | ---------------- |
+| `poster.name` | `str` | `"Anonymous"`
+| `poster.is_moderator` | `bool` | `True`, `False`
+| `poster.id` | `Optional[str]` | `None`, `"BYagKQXI"`
+| `poster.flag` | `Optional[str]` | `None`, `"United States"`, `"Canada"`
 
 ### Files
 
@@ -160,16 +171,7 @@ The table below corresponds to the `pychan.models.File` class.
 | `file.url` | `str` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
 | `file.name` | `str` | `"wojak.jpg"`, `"i feel alone.jpg"`
 | `file.size` | `str` | `"601 KB"`
-| `file.dimensions` | `tuple[int, int]` | `(1920, 1080)`, `(800, 600)` 
-
-### Posters
-
-The table below corresponds to the `pychan.models.Poster` class.
-
-| Field | Type | Example Value(s) |
-| ----- | ---- | ---------------- |
-| `poster.id` | `str` | `"BYagKQXI"`
-| `poster.flag` | `str` | `"United States"`, `"Canada"`
+| `file.dimensions` | `tuple[int, int]` | `(1920, 1080)`, `(800, 600)`
 
 ## Contributing
 
