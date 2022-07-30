@@ -163,11 +163,6 @@ def test_get_posts(fourchan: FourChan) -> None:
     assert len(expected) == len(actual)
     for i, post in enumerate(expected):
         assert tuple(post) == tuple(actual[i])
-        assert tuple(post.thread) == tuple(actual[i].thread)
-        if post.file is None:
-            assert post.file == actual[i].file
-        else:
-            assert tuple(post.file) == tuple(actual[i].file)
 
 
 def test_get_posts_http_errors(fourchan: FourChan) -> None:
