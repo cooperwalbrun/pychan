@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.2.1 - 2022-07-30
+
+### Added
+
+* The `Post` model now includes the post's timestamp in the `timestamp` field (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* The `Thread` model now has `stickied` and `closed` boolean fields (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* Created the `Poster` model and updated the `Post` model to use it (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Fixed
+
+* Fixed thread titles being truncated and ellipsized (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.2.0 - 2022-07-29
 
 ### Added

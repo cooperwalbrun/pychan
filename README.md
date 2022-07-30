@@ -5,12 +5,16 @@
 3. [Usage](#usage)
    1. [General Notes](#general-notes)
    2. [Setup](#setup)
-   3. [Data Available on pychan's Models](#data-available-on-pychans-models)
-   4. [Iterating Over Threads](#iterating-over-threads)
-   5. [Search 4chan](#search-4chan)
-   6. [Get All Boards](#get-all-boards)
-   7. [Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread)
-4. [Contributing](#contributing)
+   3. [Iterating Over Threads](#iterating-over-threads)
+   4. [Search 4chan](#search-4chan)
+   5. [Get All Boards](#get-all-boards)
+   6. [Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread)
+4. [Data Available on the Models](#data-available-on-the-models)
+   1. [Threads](#threads)
+   2. [Posts](#posts)
+   3. [Files](#files)
+   4. [Posters](#posters)
+5. [Contributing](#contributing)
 
 ## Overview
 
@@ -59,24 +63,6 @@ fourchan = FourChan(logger)
 The rest of the examples in this `README` assume that you have already created an instance of the
 `FourChan` class as shown above.
 
-### Data Available on pychan's Models
-
-The following table enumerates all the kinds of data that are available on the various models used
-by this library.
-
-| Entity | Field | Example Value(s) |
-| ------ | ----- | ---------------- |
-| `pychan.models.Thread` | `thread.board` | `"b"`, `"int"`
-| `pychan.models.Thread` | `thread.number` | `882774935`, `168484869`
-| `pychan.models.Thread` | `thread.title` | `None`, `"YLYL thread"`
-| `pychan.models.Post` | `post.thread` | `pychan.models.Thread`
-| `pychan.models.Post` | `post.number` | `882774935`, `882774974`
-| `pychan.models.Post` | `post.is_original_post` | `True`, `False`
-| `pychan.models.Post` | `post.poster_id` | `None`, `"BYagKQXI"`
-| `pychan.models.Post` | `post.file` | `None`, `pychan.models.File`
-| `pychan.models.File` | `file.url` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
-| `pychan.models.File` | `file.name` | `"wojak.jpg"`, `"i feel alone.jpg"`
-
 ### Iterating Over Threads
 
 ```python
@@ -120,11 +106,61 @@ from pychan.models import Thread
 # Instantiate a Thread instance with which to query for posts
 thread = Thread("int", 168484869)
 
-# Note: the thread contained within the returned posts will have a title if the thread had a title,
-# regardless of whether you provided the title above - pychan will "auto-discover" the title and
-# include it in the post models
+# Note: the thread contained within the returned posts will have all applicable metadata (such as
+# title, and sticky status), regardless of whether you provided such data above - pychan will
+# "auto-discover" metadata and include it in the post models' copy of the thread
 posts = fourchan.get_posts(thread)
 ```
+
+## Data Available on the Models
+
+The following tables enumerate all the kinds of data that are available on the various models used
+by this library.
+
+Also note that all model classes in `pychan` implement the following methods:
+
+* `__repr__`
+* `__str__`
+* `__hash__`
+* `__eq__`
+* `__copy__`
+* `__deepcopy__`
+
+### Threads
+
+| Entity | Field | Type | Example Value(s) |
+| ------ | ----- | ---- | ---------------- |
+| `pychan.models.Thread` | `thread.board` | `str` | `"b"`, `"int"`
+| `pychan.models.Thread` | `thread.number` | `int` | `882774935`, `168484869`
+| `pychan.models.Thread` | `thread.title` | `Optional[str]` | `None`, `"YLYL thread"`
+| `pychan.models.Thread` | `thread.stickied` | `bool` | `True`, `False`
+| `pychan.models.Thread` | `thread.closed` | `bool` | `True`, `False`
+
+### Posts
+
+| Entity | Field | Type | Example Value(s) |
+| ------ | ----- | ---- | ---------------- |
+| `pychan.models.Post` | `post.thread` | `Thread` | `pychan.models.Thread`
+| `pychan.models.Post` | `post.number` | `int` | `882774935`, `882774974`
+| `pychan.models.Post` | `post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime) | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+| `pychan.models.Post` | `post.text` | `str` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
+| `pychan.models.Post` | `post.is_original_post` | `bool` | `True`, `False`
+| `pychan.models.Post` | `post.file` | `Optional[File]` | `None`, `pychan.models.File`
+| `pychan.models.Post` | `post.poster` | `Optional[Poster]` | `None`, `pychan.models.Poster`
+
+### Files
+
+| Entity | Field | Type | Example Value(s) |
+| ------ | ----- | ---- | ---------------- |
+| `pychan.models.File` | `file.url` | `str` | `"https://i.4cdn.org/pol/1658892700380132.jpg"`
+| `pychan.models.File` | `file.name` | `str` | `"wojak.jpg"`, `"i feel alone.jpg"`
+
+### Posters
+
+| Entity | Field | Type | Example Value(s) |
+| ------ | ----- | ---- | ---------------- |
+| `pychan.models.Poster` | `poster.id` | `str` | `"BYagKQXI"`
+| `pychan.models.Poster` | `poster.flag` | `str` | `"United States"`, `"Canada"`
 
 ## Contributing
 
