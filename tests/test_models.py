@@ -97,7 +97,7 @@ def test_serialization() -> None:
 
     for text in [None, "test"]:
         thread = Thread("b", 1337, title=text)
-        assert tuple(thread) == ("b", 1337, text, False, False)
+        assert tuple(thread) == ("b", 1337, text, False, False, False)
 
         post = Post(thread, 1337, _TIMESTAMP, poster, "test")
         # yapf: disable

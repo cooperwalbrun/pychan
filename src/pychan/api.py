@@ -38,6 +38,7 @@ class FourChan:
         self._logger = logger if logger is not None else PychanLogger(LogLevel.OFF)
 
     def _parse_file_from_html(self, post_html_element: Any) -> Optional[File]:
+        self._logger.debug(f"Attempting to parse a File out of {post_html_element}...")
         file_text = _find_first(post_html_element, ".fileText")
         file_anchor = _find_first(post_html_element, ".fileText a")
         if file_text is not None and file_anchor is not None:
@@ -57,6 +58,7 @@ class FourChan:
             return None
 
     def _parse_poster_from_html(self, post_html_element: Any) -> Optional[Poster]:
+        self._logger.debug(f"Attempting to parse a Poster out of {post_html_element}...")
         name = _text(_find_first(post_html_element, ".nameBlock > .name"))
         mod = _find_first(post_html_element, ".nameBlock > .id_mod") is not None
         uid = _text(_find_first(post_html_element, ".posteruid span"))
@@ -69,6 +71,7 @@ class FourChan:
             return None
 
     def _parse_post_from_html(self, thread: Thread, post_html_element: Any) -> Optional[Post]:
+        self._logger.debug(f"Attempting to parse a Post out of {post_html_element}...")
         timestamp = _find_first(post_html_element, ".dateTime")
         if timestamp is not None and hasattr(timestamp, "data-utc"):
             timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
@@ -210,14 +213,49 @@ class FourChan:
                         board,
                         thread_number,
                         title=title,
-                        stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
-                        closed=_find_first(thread, ".op .desktop .closedIcon") is not None
+                        is_stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
+                        is_closed=_find_first(thread, ".op .desktop .closedIcon") is not None,
+                        is_archived=_find_first(thread, ".op .desktop .archivedIcon") is not None
                     )
             else:
                 self._logger.info((
                     f"Page {p} of /{sanitized_board}/ could not be fetched, so no further threads "
                     f"will be returned"
                 ))
+
+    def get_archived_threads(self, board: str) -> list[Thread]:
+        """
+        Fetches archived threads for a specific board. The titles of the returned threads will be
+        the "excerpt" shown in 4chan, which could be either the thread's real title or a preview of
+        the original post's text.
+
+        :param board: The board name to fetch threads for. You may include slashes. Examples: "/b/",
+                      "b", "vg/", "/vg"
+        :return: The list of threads currently in the archive.
+        """
+        sanitized_board = _sanitize_board(board)
+        if self._is_unparsable_board(sanitized_board):
+            return []
+
+        response = self._request_helper(f"https://boards.4chan.org/{sanitized_board}/archive")
+        ret = []
+        if response is not None:
+            soup = BeautifulSoup(response.text, "html.parser")
+            for table_row in soup.select("#arc-list tbody tr"):
+                id = _text(_find_first(table_row, "td"))
+                if id is not None:
+                    ret.append(
+                        Thread(
+                            sanitized_board,
+                            int(id),
+                            title=_text(_find_first(table_row, ".teaser-col")),
+                            is_stickied=False,
+                            is_closed=False,
+                            is_archived=True
+                        )
+                    )
+
+        return ret
 
     def get_posts(self, thread: Thread) -> list[Post]:
         """
@@ -227,17 +265,15 @@ class FourChan:
         :return: The list of posts currently in the thread. If there are no replies on the thread,
                  the returned list can be expected to have a single element (the original post).
         """
-        loaded_thread = copy.deepcopy(thread)
-        loaded_thread.board = _sanitize_board(loaded_thread.board)
+        t = copy.deepcopy(thread)
+        t.board = _sanitize_board(t.board)
 
-        if self._is_unparsable_board(loaded_thread.board):
+        if self._is_unparsable_board(t.board):
             return []
 
-        self._logger.debug(f"Fetching posts for {loaded_thread}...")
+        self._logger.debug(f"Fetching posts for {t}...")
         response = self._request_helper(
-            "https://boards.4channel.org/{}/thread/{}/".format(
-                loaded_thread.board, loaded_thread.number
-            )
+            "https://boards.4channel.org/{}/thread/{}/".format(t.board, t.number)
         )
         if response is None:
             return []
@@ -245,13 +281,14 @@ class FourChan:
         soup = BeautifulSoup(response.text, "html.parser")
         ret = []
         for post in soup.select("div.post"):
-            p = self._parse_post_from_html(loaded_thread, post)
+            p = self._parse_post_from_html(t, post)
             if p is not None:
                 if p.is_original_post:
-                    loaded_thread.title = _text(_find_first(post, ".desktop .subject"))
-                    loaded_thread.stickied = _find_first(post, ".desktop .stickyIcon") is not None
-                    loaded_thread.closed = _find_first(post, ".desktop .closedIcon") is not None
-                    p.thread = loaded_thread
+                    t.title = _text(_find_first(post, ".desktop .subject"))
+                    t.is_stickied = _find_first(post, ".desktop .stickyIcon") is not None
+                    t.is_closed = _find_first(post, ".desktop .closedIcon") is not None
+                    t.is_archived = _find_first(post, ".desktop .archivedIcon") is not None
+                    p.thread = t
 
                 ret.append(p)
 
@@ -306,9 +343,10 @@ class FourChan:
                             t.get("board", sanitized_board),
                             int(number[1:]),
                             title=title,
-                            # Closed and stickied threads are not returned in search results
-                            stickied=False,
-                            closed=False
+                            # Closed/stickied/archived threads are not returned in search results
+                            is_stickied=False,
+                            is_closed=False,
+                            is_archived=False
                         )
                         if thread.number not in seen_thread_numbers:
                             new_this_iteration = True

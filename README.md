@@ -5,15 +5,16 @@
 3. [Usage](#usage)
    1. [General Notes](#general-notes)
    2. [Setup](#setup)
-   3. [Iterating Over Threads](#iterating-over-threads)
-   4. [Search 4chan](#search-4chan)
-   5. [Get All Boards](#get-all-boards)
-   6. [Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread)
+   3. [Fetch Board Names](#fetch-board-names)
+   4. [Fetch Threads](#fetch-threads)
+   5. [Fetch Archived Threads](#fetch-archived-threads)
+   6. [Search 4chan](#search-4chan)
+   7. [Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread)
 4. [pychan Models](#pychan-models)
    1. [Threads](#threads)
    2. [Posts](#posts)
-   3. [Files](#files)
-   4. [Posters](#posters)
+   3. [Posters](#posters)
+   4. [Files](#files)
 5. [Contributing](#contributing)
 
 ## Overview
@@ -62,11 +63,45 @@ fourchan = FourChan(logger)
 The rest of the examples in this `README` assume that you have already created an instance of the
 `FourChan` class as shown above.
 
-### Iterating Over Threads
+### Fetch Board Names
+
+This function dynamically fetches boards from 4chan at call time.
+
+>Note: boards which are not compatible with `pychan` are not returned in this list.
+
+```python
+boards = fourchan.get_boards()
+# Sample return value:
+# ['a', 'b', 'c', 'd', 'e', 'g', 'gif', 'h', 'hr', 'k', 'm', 'o', 'p', 'r', 's', 't', 'u', 'v', 'vg', 'vm', 'vmg', 'vr', 'vrpg', 'vst', 'w', 'wg', 'i', 'ic', 'r9k', 's4s', 'vip', 'qa', 'cm', 'hm', 'lgbt', 'y', '3', 'aco', 'adv', 'an', 'bant', 'biz', 'cgl', 'ck', 'co', 'diy', 'fa', 'fit', 'gd', 'hc', 'his', 'int', 'jp', 'lit', 'mlp', 'mu', 'n', 'news', 'out', 'po', 'pol', 'pw', 'qst', 'sci', 'soc', 'sp', 'tg', 'toy', 'trv', 'tv', 'vp', 'vt', 'wsg', 'wsr', 'x', 'xs']
+```
+
+### Fetch Threads
 
 ```python
 # Iterate over all threads in /b/ lazily (Python Generator)
 for thread in fourchan.get_threads("b"):
+    # Iterate over all posts in each thread
+    for post in fourchan.get_posts(thread):
+        # Do stuff with the post
+        print(post.text)
+```
+
+### Fetch Archived Threads
+
+The threads returned by this function will always have a `title` field containing the text shown in
+4chan's interface under the "Excerpt" column header. This text can be either the thread's real title
+or a preview of the original post's text. Passing any of the threads returned by this method to the
+`get_posts()` method will automatically correct the `title` field (if necessary) on the thread that
+gets attached to the returned posts. See
+[Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread) for more details.
+
+>Note that `pychan` could address the `title` behavior described above by issuing an additional
+>HTTP request for each thread to get its real title, but in the spirit of making the smallest number
+>of HTTP requests possible, `pychan` directly uses the excerpt instead.
+
+```python
+# Unlike get_threads(), the get_archived_threads() method returns a list instead of a Python Generator
+for thread in fourchan.get_archived_threads("pol"):
     # Iterate over all posts in each thread
     for post in fourchan.get_posts(thread):
         # Do stuff with the post
@@ -82,22 +117,7 @@ for thread in fourchan.search(board="b", text="ylyl"):
     ...
 ```
 
-### Get All Boards
-
-This function dynamically fetches boards from 4chan at call time.
-
-```python
-boards = fourchan.get_boards()
-# Sample return value:
-# ['a', 'b', 'c', 'd', 'e', 'g', 'gif', 'h', 'hr', 'k', 'm', 'o', 'p', 'r', 's', 't', 'u', 'v', 'vg', 'vm', 'vmg', 'vr', 'vrpg', 'vst', 'w', 'wg', 'i', 'ic', 'r9k', 's4s', 'vip', 'qa', 'cm', 'hm', 'lgbt', 'y', '3', 'aco', 'adv', 'an', 'bant', 'biz', 'cgl', 'ck', 'co', 'diy', 'fa', 'fit', 'gd', 'hc', 'his', 'int', 'jp', 'lit', 'mlp', 'mu', 'n', 'news', 'out', 'po', 'pol', 'pw', 'qst', 'sci', 'soc', 'sp', 'tg', 'toy', 'trv', 'tv', 'vp', 'vt', 'wsg', 'wsr', 'x', 'xs']
-```
-
 ### Fetch Posts for a Specific Thread
-
->Warning: this will NOT work if the thread has become "stale" in 4chan and has entered an "archived"
->state. This happens to almost all threads after they have gone inactive long enough. Therefore, it
->is recommended to use the iterating-based functionality shown above instead of doing what is shown
->below.
 
 ```python
 from pychan.models import Thread
@@ -134,8 +154,9 @@ The table below corresponds to the `pychan.models.Thread` class.
 | `thread.board` | `str` | `"b"`, `"int"`
 | `thread.number` | `int` | `882774935`, `168484869`
 | `thread.title` | `Optional[str]` | `None`, `"YLYL thread"`
-| `thread.stickied` | `bool` | `True`, `False`
-| `thread.closed` | `bool` | `True`, `False`
+| `thread.is_stickied` | `bool` | `True`, `False`
+| `thread.is_closed` | `bool` | `True`, `False`
+| `thread.is_archived` | `bool` | `True`, `False`
 
 ### Posts
 
