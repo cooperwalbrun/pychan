@@ -53,10 +53,10 @@ def test_get_threads(fourchan: FourChan) -> None:
             board,
             124205675,
             title="Welcome to /pol/ - Politically Incorrect",
-            stickied=True,
-            closed=True
+            is_stickied=True,
+            is_closed=True
         ),
-        Thread(board, 259848258, stickied=True, closed=True),
+        Thread(board, 259848258, is_stickied=True, is_closed=True),
         Thread(board, 388895332, title="What is her end game?"),
         Thread(board, 388890794, title="I really truly deeply don't get it"),
         Thread(board, 388890337, title="/tg/ - Taiwan General"),

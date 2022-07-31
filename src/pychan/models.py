@@ -10,14 +10,14 @@ class Thread:
         number: int,
         *,
         title: Optional[str] = None,
-        stickied: bool = False,
-        closed: bool = False
+        is_stickied: bool = False,
+        is_closed: bool = False
     ):
         self.board = board
         self.number = number
         self.title = title
-        self.stickied = stickied
-        self.closed = closed
+        self.is_stickied = is_stickied
+        self.is_closed = is_closed
 
     def __repr__(self) -> str:
         return f"Thread(https://boards.4channel.org/{self.board}/thread/{self.number})"
@@ -36,12 +36,16 @@ class Thread:
 
     def __iter__(self) -> Generator[Any, None, None]:
         # We implement __iter__ so this class can be serialized as a tuple
-        for field in [self.board, self.number, self.title, self.stickied, self.closed]:
+        for field in [self.board, self.number, self.title, self.is_stickied, self.is_closed]:
             yield field
 
     def __copy__(self):
         return Thread(
-            self.board, self.number, title=self.title, stickied=self.stickied, closed=self.closed
+            self.board,
+            self.number,
+            title=self.title,
+            is_stickied=self.is_stickied,
+            is_closed=self.is_closed
         )
 
     def __deepcopy__(self, memo: dict[Any, Any]):
@@ -49,8 +53,8 @@ class Thread:
             copy.deepcopy(self.board, memo),
             self.number,
             title=copy.deepcopy(self.title, memo),
-            stickied=self.stickied,
-            closed=self.closed
+            is_stickied=self.is_stickied,
+            is_closed=self.is_closed
         )
 
 

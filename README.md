@@ -12,8 +12,8 @@
 4. [pychan Models](#pychan-models)
    1. [Threads](#threads)
    2. [Posts](#posts)
-   3. [Files](#files)
-   4. [Posters](#posters)
+   3. [Posters](#posters)
+   4. [Files](#files)
 5. [Contributing](#contributing)
 
 ## Overview
@@ -94,11 +94,6 @@ boards = fourchan.get_boards()
 
 ### Fetch Posts for a Specific Thread
 
->Warning: this will NOT work if the thread has become "stale" in 4chan and has entered an "archived"
->state. This happens to almost all threads after they have gone inactive long enough. Therefore, it
->is recommended to use the iterating-based functionality shown above instead of doing what is shown
->below.
-
 ```python
 from pychan.models import Thread
 
@@ -134,8 +129,8 @@ The table below corresponds to the `pychan.models.Thread` class.
 | `thread.board` | `str` | `"b"`, `"int"`
 | `thread.number` | `int` | `882774935`, `168484869`
 | `thread.title` | `Optional[str]` | `None`, `"YLYL thread"`
-| `thread.stickied` | `bool` | `True`, `False`
-| `thread.closed` | `bool` | `True`, `False`
+| `thread.is_stickied` | `bool` | `True`, `False`
+| `thread.is_closed` | `bool` | `True`, `False`
 
 ### Posts
 

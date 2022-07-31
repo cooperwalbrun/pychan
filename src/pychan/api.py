@@ -210,8 +210,8 @@ class FourChan:
                         board,
                         thread_number,
                         title=title,
-                        stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
-                        closed=_find_first(thread, ".op .desktop .closedIcon") is not None
+                        is_stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
+                        is_closed=_find_first(thread, ".op .desktop .closedIcon") is not None
                     )
             else:
                 self._logger.info((
@@ -307,8 +307,8 @@ class FourChan:
                             int(number[1:]),
                             title=title,
                             # Closed and stickied threads are not returned in search results
-                            stickied=False,
-                            closed=False
+                            is_stickied=False,
+                            is_closed=False
                         )
                         if thread.number not in seen_thread_numbers:
                             new_this_iteration = True

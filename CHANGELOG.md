@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-Nothing currently!
+### Changed
+
+* Changed the `stickied` and `closed` fields on the `Thread` model to `is_stickied` and `is_closed` (by [@cooperwalbrun](https://github.com/cooperwalbrun))
 
 ## v0.2.3 - 2022-07-30
 
