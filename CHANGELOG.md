@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+Nothing currently!
+
+## v0.3.0 - 2022-07-31
+
+### Added
+
+* Implemented the `get_archived_threads()` method (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ### Changed
 
 * Changed the `stickied` and `closed` fields on the `Thread` model to `is_stickied` and `is_closed` (by [@cooperwalbrun](https://github.com/cooperwalbrun))

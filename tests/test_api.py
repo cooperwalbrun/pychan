@@ -11,7 +11,7 @@ from pychan.models import Thread, Post, File, Poster
 
 @pytest.fixture
 def fourchan() -> FourChan:
-    fourchan = FourChan(PychanLogger(LogLevel.INFO))
+    fourchan = FourChan(PychanLogger(LogLevel.DEBUG))
     fourchan._request_throttle = lambda: None
     return fourchan
 
@@ -91,7 +91,7 @@ def test_get_thread_unparsable_board(fourchan: FourChan) -> None:
 
 
 def test_get_threads_http_errors(fourchan: FourChan) -> None:
-    board = "n"
+    board = "pol"
 
     @responses.activate
     def helper(status: int) -> None:
@@ -103,6 +103,43 @@ def test_get_threads_http_errors(fourchan: FourChan) -> None:
         assert len(actual) == 0
         responses.assert_call_count(url=f"https://boards.4channel.org/{board}", count=1)
         responses.assert_call_count(url=f"https://boards.4channel.org/{board}/2", count=0)
+
+    helper(403)
+    helper(404)
+    helper(500)
+
+
+@responses.activate
+def test_get_archived_threads(fourchan: FourChan) -> None:
+    board = "pol"
+
+    with open(f"{os.path.dirname(__file__)}/html/pol_archive.html", "r", encoding="utf-8") as file:
+        test_data = file.read()
+
+    responses.add(
+        responses.GET, url=f"https://boards.4chan.org/{board}/archive", status=200, body=test_data
+    )
+
+    threads = fourchan.get_archived_threads(board)
+    assert len(threads) == 3000
+    for thread in threads:
+        assert thread.title is not None
+        assert thread.is_archived
+
+
+def test_get_archived_threads_http_errors(fourchan: FourChan) -> None:
+    board = "pol"
+    url = f"https://boards.4chan.org/{board}/archive"
+
+    @responses.activate
+    def helper(status: int) -> None:
+        # The method should only attempt to fetch the first page, because the generator should
+        # terminate once it reaches a page that was not retrievable
+        responses.add(responses.GET, url=url, status=status)
+
+        actual = list(fourchan.get_archived_threads(board))
+        assert len(actual) == 0
+        responses.assert_call_count(url=url, count=1)
 
     helper(403)
     helper(404)
