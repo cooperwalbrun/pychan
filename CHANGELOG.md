@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+Nothing currently!
+
+## v0.3.3 - 2022-08-05
+
 ### Added
 
 * `pychan` now supports Python 3.9 in addition to Python 3.10+ (by [@cooperwalbrun](https://github.com/cooperwalbrun))
