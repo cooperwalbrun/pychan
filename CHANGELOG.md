@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.3.1 - 2022-08-04
+
+### Fixed
+
+* The `get_threads()` method will no longer return duplicate threads, even when waiting long periods of time between `yield`s (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.3.0 - 2022-07-31
 
 ### Added
