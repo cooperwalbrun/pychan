@@ -13,6 +13,7 @@
 4. [pychan Models](#pychan-models)
    1. [Threads](#threads)
    2. [Posts](#posts)
+      1. [A Note About Replies](#a-note-about-replies)
    3. [Posters](#posters)
    4. [Files](#files)
 5. [Contributing](#contributing)
@@ -27,7 +28,7 @@ performance and minimize superfluous blocking I/O operations.
 
 ## Installation
 
-If you have Python >=3.10 and <4.0 installed, `pychan` can be installed from PyPI using
+If you have Python >=3.9 and <4.0 installed, `pychan` can be installed from PyPI using
 something like
 
 ```bash
@@ -82,7 +83,7 @@ boards = fourchan.get_boards()
 for thread in fourchan.get_threads("b"):
     # Iterate over all posts in each thread
     for post in fourchan.get_posts(thread):
-        # Do stuff with the post
+        # Do stuff with the post - refer to the model documentation in pychan's README for details
         print(post.text)
 ```
 
@@ -104,7 +105,7 @@ gets attached to the returned posts. See
 for thread in fourchan.get_archived_threads("pol"):
     # Iterate over all posts in each thread
     for post in fourchan.get_posts(thread):
-        # Do stuff with the post
+        # Do stuff with the post - refer to the model documentation in pychan's README for details
         print(post.text)
 ```
 
@@ -114,7 +115,9 @@ for thread in fourchan.get_archived_threads("pol"):
 # Iterate over all threads returned in the search results lazily (Python Generator)
 for thread in fourchan.search(board="b", text="ylyl"):
     # The thread object is the same class as the one returned by get_threads()
-    ...
+    for post in fourchan.get_posts(thread):
+       # Do stuff with the post - refer to the model documentation in pychan's README for details
+       print(post.text)
 ```
 
 ### Fetch Posts for a Specific Thread
@@ -133,7 +136,7 @@ posts = fourchan.get_posts(thread)
 
 ## pychan Models
 
-The following tables enumerate all the kinds of data that are available on the various models used
+The following tables summarize all the kinds of data that are available on the various models used
 by this library.
 
 Also note that all model classes in `pychan` implement the following methods:
@@ -172,6 +175,14 @@ The table below corresponds to the `pychan.models.Post` class.
 `post.is_original_post` | `bool` | `True`, `False`
 `post.file` | `Optional[File]` | `None`, `pychan.models.File`
 `post.replies` | `list[Post]` | `[]`, `[pychan.models.Post, pychan.models.Post]`
+
+#### A Note About Replies
+
+The `replies` field shown above is purely a convenience feature `pychan` provides for accessing all
+posts within a thread that use the `>>` operator to "reply" to a post earlier in the thread. If you
+were to iterate over all posts in a thread via `get_posts()`, you would obtain all posts and their
+replies (in the order they were posted) as a single list. You do *not* have to access the `replies`
+field to access all the posts in a given thread.
 
 ### Posters
 
