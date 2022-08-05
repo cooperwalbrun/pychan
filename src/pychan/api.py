@@ -196,6 +196,8 @@ class FourChan:
             suffix = f"/{page_number}" if page_number > 1 else ""
             return self._request_helper(f"https://boards.4channel.org/{sanitized_board}" + suffix)
 
+        seen_thread_numbers = set()
+
         p = 0
         response = None
         while p == 0 or response is not None:
@@ -207,16 +209,17 @@ class FourChan:
             if response is not None:
                 soup = BeautifulSoup(response.text, "html.parser")
                 for thread in soup.select(".board > .thread"):
-                    title = _text(_find_first(thread, ".desktop .subject"))
-                    thread_number = int(thread["id"][1:])
-                    yield Thread(
+                    t = Thread(
                         board,
-                        thread_number,
-                        title=title,
+                        int(thread["id"][1:]),
+                        title=_text(_find_first(thread, ".desktop .subject")),
                         is_stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
                         is_closed=_find_first(thread, ".op .desktop .closedIcon") is not None,
                         is_archived=_find_first(thread, ".op .desktop .archivedIcon") is not None
                     )
+                    if t.number not in seen_thread_numbers:
+                        seen_thread_numbers.add(t.number)
+                        yield t
             else:
                 self._logger.info((
                     f"Page {p} of /{sanitized_board}/ could not be fetched, so no further threads "
@@ -320,8 +323,6 @@ class FourChan:
                 }
             )
 
-        # The search results pages tend to overlap with one another, so this method requires
-        # additional book-keeping in order to ensure duplicate threads are not returned
         seen_thread_numbers = set()
 
         offset = 0

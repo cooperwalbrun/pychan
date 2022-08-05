@@ -44,7 +44,7 @@ take responsibility for the consequences of excessive HTTP requests in such case
 
 For all thread-level iteration shown below, the generators returned  will maintain internal state
 about which page of 4chan you are currently on. Threads are fetched one page at a time up to page 10
-(which is the highest page at which 4chan renders threads for any given board). Once page 10 is
+(which is the highest page at which 4chan renders threads for any given board). Once page 11 is
 reached internally by the generator, it stops returning threads.
 
 ### Setup
