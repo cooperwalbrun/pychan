@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.3.2 - 2022-08-05
+
+### Added
+
+* The `Post` model now includes replies to the given post in a `replies` field (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.3.1 - 2022-08-04
 
 ### Fixed

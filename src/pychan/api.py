@@ -32,6 +32,7 @@ def _sanitize_board(board: str) -> str:
 
 class FourChan:
     _UNPARSABLE_BOARDS = ["f"]
+    _POST_TEXT_SELECTOR = "blockquote.postMessage"
 
     def __init__(self, logger: Optional[PychanLogger] = None):
         self._agent = str(uuid4())
@@ -84,7 +85,7 @@ class FourChan:
             self._logger.error(f"No poster was discovered in {post_html_element}")
             return None
 
-        message = _find_first(post_html_element, "blockquote.postMessage")
+        message = _find_first(post_html_element, self._POST_TEXT_SELECTOR)
         if message is not None:
             line_break_placeholder = str(uuid4())
             # The following approach to preserve HTML line breaks in the final post text is
@@ -283,9 +284,21 @@ class FourChan:
 
         soup = BeautifulSoup(response.text, "html.parser")
         ret = []
-        for post in soup.select("div.post"):
+        for post in soup.select(".post"):
             p = self._parse_post_from_html(t, post)
             if p is not None:
+                for quote_link in post.select(f"{self._POST_TEXT_SELECTOR} a.quotelink"):
+                    if hasattr(quote_link, "href") and quote_link["href"].startswith("#p"):
+                        # The #p check in the href above also guards against the situation where
+                        # a post is quote-linking to a post in a different thread, which is
+                        # currently beyond the scope of this function's implementation
+                        quoted_post_number = int(quote_link["href"][2:])
+                        for ret_post in ret:
+                            if ret_post.number == quoted_post_number and \
+                                    not any([r.number == p.number for r in ret_post.replies]):
+                                ret_post.replies.append(p)
+                                break
+
                 if p.is_original_post:
                     t.title = _text(_find_first(post, ".desktop .subject"))
                     t.is_stickied = _find_first(post, ".desktop .stickyIcon") is not None

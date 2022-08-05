@@ -168,7 +168,8 @@ class Post:
         text: str,
         *,
         is_original_post: bool = False,
-        file: Optional[File] = None
+        file: Optional[File] = None,
+        replies: Optional[list] = None
     ):
         self.thread = thread
         self.number = number
@@ -177,6 +178,7 @@ class Post:
         self.text = text
         self.is_original_post = is_original_post
         self.file = file
+        self.replies: list[Post] = replies if replies is not None else []
 
     def __repr__(self) -> str:
         return "Post(https://boards.4channel.org/{})".format(
@@ -200,12 +202,13 @@ class Post:
         fields = list(self.thread) + [self.number, self.timestamp] + \
                  list(self.poster) + \
                  [
-                      self.text,
-                      self.is_original_post,
-                      None if self.file is None else self.file.url,
-                      None if self.file is None else self.file.name,
-                      None if self.file is None else self.file.size,
-                      None if self.file is None else self.file.dimensions
+                     self.text,
+                     self.is_original_post,
+                     None if self.file is None else self.file.url,
+                     None if self.file is None else self.file.name,
+                     None if self.file is None else self.file.size,
+                     None if self.file is None else self.file.dimensions,
+                     len(self.replies)
                   ]
         for field in fields:
             yield field
@@ -218,7 +221,8 @@ class Post:
             self.poster,
             self.text,
             is_original_post=self.is_original_post,
-            file=self.file
+            file=self.file,
+            replies=self.replies
         )
 
     def __deepcopy__(self, memo: dict[Any, Any]):
@@ -229,5 +233,6 @@ class Post:
             copy.deepcopy(self.poster, memo),
             copy.deepcopy(self.text, memo),
             is_original_post=self.is_original_post,
-            file=copy.deepcopy(self.file, memo)
+            file=copy.deepcopy(self.file, memo),
+            replies=copy.deepcopy(self.replies, memo)
         )

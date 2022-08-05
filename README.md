@@ -171,6 +171,7 @@ The table below corresponds to the `pychan.models.Post` class.
 `post.text` | `str` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
 `post.is_original_post` | `bool` | `True`, `False`
 `post.file` | `Optional[File]` | `None`, `pychan.models.File`
+`post.replies` | `list[Post]` | `[]`, `[pychan.models.Post, pychan.models.Post]`
 
 ### Posters
 
