@@ -165,6 +165,21 @@ def test_get_posts(fourchan: FourChan) -> None:
         body=test_data
     )
 
+    reply1 = Post(
+        processed_thread,
+        388462302,
+        datetime.fromtimestamp(1658892803, timezone.utc),
+        Poster("Anonymous", id="yzu2QJHE", flag="United States"),
+        ">>388462123\n>>388462123\n>>388462123\nwhat movie?"
+    )
+    reply2 = Post(
+        processed_thread,
+        388462314,
+        datetime.fromtimestamp(1658892808, timezone.utc),
+        Poster("Anonymous", id="xF49FJaT", flag="United States"),
+        ">>388462123\nFunny movie but there was agenda with this film"
+    )
+
     expected = [
         Post(
             processed_thread,
@@ -177,28 +192,17 @@ def test_get_posts(fourchan: FourChan) -> None:
                 "https://i.4cdn.org/pol/1658892700380132.jpg",
                 "hitler miss kromier.jpg",
                 "106 KB", (800, 600)
-            )
+            ),
+            replies=[reply1, reply2]
         ),
-        Post(
-            processed_thread,
-            388462302,
-            datetime.fromtimestamp(1658892803, timezone.utc),
-            Poster("Anonymous", id="yzu2QJHE", flag="United States"),
-            ">>388462123\nwhat movie?"
-        ),
-        Post(
-            processed_thread,
-            388462314,
-            datetime.fromtimestamp(1658892808, timezone.utc),
-            Poster("Anonymous", id="xF49FJaT", flag="United States"),
-            ">>388462123\nFunny movie but there was agenda with this film"
-        ),
+        reply1,
+        reply2,
         Post(
             processed_thread,
             388462450,
             datetime.fromtimestamp(1658892887, timezone.utc),
             Poster("Anonymous", id="e8uCKNk1", flag="Canada"),
-            ">>388462302\nLook who's back."
+            ">>389829992 →\nLook who's back."
         )
     ]
     actual = fourchan.get_posts(thread)

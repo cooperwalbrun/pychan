@@ -112,7 +112,8 @@ def test_serialization() -> None:
             None,
             None,
             None,
-            None
+            None,
+            0
         )
         # yapf: enable
 
@@ -129,7 +130,8 @@ def test_serialization() -> None:
             file.url,
             file.name,
             file.size,
-            file.dimensions
+            file.dimensions,
+            0
         )
 
 
