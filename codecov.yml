@@ -27,4 +27,4 @@ comment:
   require_changes: false
 
 ignore:
-  - "**/pychan/__init__.py"
+  - "src/pychan/__init__.py"
