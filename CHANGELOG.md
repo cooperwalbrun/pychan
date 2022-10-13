@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.3.4 - 2022-10-12
+
+### Changed
+
+* The author email address in the wheel's metadata is now set to a real email address (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.3.3 - 2022-08-05
 
 ### Added
