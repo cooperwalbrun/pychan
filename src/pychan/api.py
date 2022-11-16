@@ -5,19 +5,44 @@ from typing import Optional, Generator, Any
 from uuid import uuid4
 
 import requests
-from bs4 import BeautifulSoup
-from ratelimit import sleep_and_retry, limits
+from bs4 import BeautifulSoup, Tag
+from pyrate_limiter import Limiter, RequestRate, Duration
 from requests import Response
 
 from pychan.logger import PychanLogger, LogLevel
 from pychan.models import File, Poster
 from pychan.models import Post, Thread
 
+_limiter = Limiter(RequestRate(1, Duration.SECOND))
 
-def _find_first(selectable_entity: Any, selector: str) -> Optional[Any]:
+
+def _find_first(selectable_entity: Tag, selector: str) -> Optional[Tag]:
     ret = selectable_entity.select(selector)
     if ret is not None and len(ret) > 0:
         return ret[0]
+    else:
+        return None
+
+
+def _get_attribute(tag: Optional[Tag], attribute: str) -> Optional[str]:
+    # Below, it is imperative that we use hasattr() instead of "x in y" syntax because these do not
+    # mean the same thing in BeautifulSoup's API (only the former behaves as expected)
+    if tag is not None and hasattr(tag, attribute):
+        ret = tag[attribute]
+        return ret[0] if isinstance(ret, list) else ret
+    else:
+        return None
+
+
+def _safe_id_parse(text: Optional[str], *, offset: int) -> Optional[int]:
+    # This function is meant to parse ID attribute values from 4chan's HTML into numeric values
+    # containing just the raw ID number. For example, _safe_id_parse("t-12345678", offset=1) should
+    # return 12345678.
+    if text is not None and len(text) > offset:
+        try:
+            return int(text[offset:])
+        except Exception:
+            return None
     else:
         return None
 
@@ -30,84 +55,120 @@ def _sanitize_board(board: str) -> str:
     return board.lower().replace("/", "").strip()
 
 
+class ParsingError(Exception):
+    pass
+
+
 class FourChan:
     _UNPARSABLE_BOARDS = ["f"]
     _POST_TEXT_SELECTOR = "blockquote.postMessage"
 
-    def __init__(self, logger: Optional[PychanLogger] = None):
+    def __init__(
+        self,
+        *,
+        logger: Optional[PychanLogger] = None,
+        raise_http_exceptions: bool = True,
+        raise_parsing_exceptions: bool = True
+    ):
+        """
+
+        :param logger: The logger instance to read for logging configuration, if any.
+        :param raise_http_exceptions: Whether internal exceptions related to HTTP errors (e.g. HTTP
+                                      500) should be raised so that users of this FourChan instance
+                                      will see them.
+        :param raise_parsing_exceptions: Whether internal exceptions related to parsing errors (e.g.
+                                         due to invalid/unrecognized HTML on HTTP responses) should
+                                         be raised so that users of this FourChan instance will see
+                                         them.
+        """
+
         self._agent = str(uuid4())
         self._logger = logger if logger is not None else PychanLogger(LogLevel.OFF)
+        self._raise_http_exceptions = raise_http_exceptions
+        self._raise_parsing_exceptions = raise_parsing_exceptions
 
-    def _parse_file_from_html(self, post_html_element: Any) -> Optional[File]:
+    def _parse_error(self, message: str) -> None:
+        if self._raise_parsing_exceptions:
+            raise ParsingError(message)
+
+    def _parse_file_from_html(self, post_html_element: Tag) -> Optional[File]:
         self._logger.debug(f"Attempting to parse a File out of {post_html_element}...")
         file_text = _find_first(post_html_element, ".fileText")
         file_anchor = _find_first(post_html_element, ".fileText a")
-        if file_text is not None and file_anchor is not None:
-            href = file_anchor["href"]
+        href = _get_attribute(file_anchor, "href")
+        if file_text is not None and file_anchor is not None and href is not None:
             href = "https:" + href if href.startswith("//") else href
-            print(file_text.text)
             metadata = re.search(r"\((.+), ([0-9]+x[0-9]+)\)", file_text.text)
-            if len(metadata.groups()) > 1:
+            if metadata is not None and len(metadata.groups()) > 1:
                 size = metadata.group(1)
                 dimensions = metadata.group(2).split("x")
                 return File(href, file_anchor.text, size, (int(dimensions[0]), int(dimensions[1])))
             else:
-                self._logger.error(f"No file metadata could not be parsed from {file_text.text}")
+                message = f"No file metadata could not be parsed from {file_text.text}"
+                self._logger.error(message)
+                self._parse_error(message)
                 return None
         else:
             self._logger.debug(f"No file was discovered in {post_html_element}")
             return None
 
-    def _parse_poster_from_html(self, post_html_element: Any) -> Optional[Poster]:
+    def _parse_poster_from_html(self, post_html_element: Tag) -> Optional[Poster]:
         self._logger.debug(f"Attempting to parse a Poster out of {post_html_element}...")
         name = _text(_find_first(post_html_element, ".nameBlock > .name"))
         mod = _find_first(post_html_element, ".nameBlock > .id_mod") is not None
         uid = _text(_find_first(post_html_element, ".posteruid span"))
-        flag = _find_first(post_html_element, ".flag")
-        flag = flag["title"] if flag is not None and hasattr(flag, "title") else None
+        flag = _get_attribute(_find_first(post_html_element, ".flag"), "title")
         if name is not None:
             return Poster(name, mod_indicator=mod, id=uid, flag=flag)
         else:
             self._logger.debug(f"No poster was discovered in {post_html_element}")
             return None
 
-    def _parse_post_from_html(self, thread: Thread, post_html_element: Any) -> Optional[Post]:
+    def _parse_post_from_html(self, thread: Thread, post_html_element: Tag) -> Optional[Post]:
         self._logger.debug(f"Attempting to parse a Post out of {post_html_element}...")
-        timestamp = _find_first(post_html_element, ".dateTime")
-        if timestamp is not None and hasattr(timestamp, "data-utc"):
-            timestamp = datetime.fromtimestamp(int(timestamp["data-utc"]), timezone.utc)
-        else:
-            self._logger.error(f"No post timestamp was discovered in {post_html_element}")
+        timestamp = _get_attribute(_find_first(post_html_element, ".dateTime"), "data-utc")
+        if timestamp is None:
+            message = f"No post timestamp was discovered in {post_html_element}"
+            self._logger.error(message)
+            self._parse_error(message)
             return None
 
+        parsed_timestamp = datetime.fromtimestamp(int(timestamp), timezone.utc)
         poster = self._parse_poster_from_html(post_html_element)
         if poster is None:
-            self._logger.error(f"No poster was discovered in {post_html_element}")
+            message = f"No poster was discovered in {post_html_element}"
+            self._logger.error(message)
+            self._parse_error(message)
             return None
 
-        message = _find_first(post_html_element, self._POST_TEXT_SELECTOR)
-        if message is not None:
+        message_tag = _find_first(post_html_element, self._POST_TEXT_SELECTOR)
+        if message_tag is not None:
             line_break_placeholder = str(uuid4())
             # The following approach to preserve HTML line breaks in the final post text is
             # based on this: https://stackoverflow.com/a/61423104
-            for line_break in message.select("br"):
+            for line_break in message_tag.select("br"):
                 line_break.replaceWith(line_break_placeholder)
-            text = message.text.replace(line_break_placeholder, "\n")
+            text = message_tag.text.replace(line_break_placeholder, "\n")
 
+            id = _safe_id_parse(_get_attribute(message_tag, "id"), offset=1)
             op = hasattr(post_html_element, "class") and "op" in post_html_element["class"]
 
-            if len(text) > 0:
+            if id is not None and len(text) > 0:
                 return Post(
                     thread,
-                    int(message["id"][1:]),
-                    timestamp,
+                    id,
+                    parsed_timestamp,
                     poster,
                     text,
                     is_original_post=op,
                     file=self._parse_file_from_html(post_html_element)
                 )
+            else:
+                return None
         else:
-            self._logger.error(f"No post text was discovered in {post_html_element}")
+            message = f"No post text was discovered in {post_html_element}"
+            self._logger.error(message)
+            self._parse_error(message)
             return None
 
     def _is_unparsable_board(self, board: str) -> bool:
@@ -121,11 +182,10 @@ class FourChan:
         else:
             return False
 
-    @sleep_and_retry
-    @limits(calls=1, period=0.75)
-    def _request_throttle(self) -> None:
-        # This is a separate function primarily to allow us to unit test _request_helper() without
-        # doing a lot of work to bypass/mock the rate-limiting annotations
+    @_limiter.ratelimit("4chan", delay=True)
+    def _throttle_request(self) -> None:
+        # The throttling mechanism is defined as a dedicated function like this so that it can be
+        # mocked in unit tests in a straightforward manner
         return
 
     def _request_helper(
@@ -135,22 +195,24 @@ class FourChan:
         headers: Optional[dict[str, str]] = None,
         params: Optional[dict[str, str]] = None
     ) -> Optional[Response]:
-        self._request_throttle()
+        self._throttle_request()
 
         h = {} if headers is None else headers
         response = requests.get(url, headers={"User-Agent": self._agent, **h}, params=params)
         if response.status_code == 200:
             return response
         elif response.status_code == 404:
-            # We have to swallow 404 errors because threads can be deleted in real-time between
+            # We have to swallow 404 errors because threads can be deleted in real-time between the
             # HTTP requests pychan sends, and we do not want to choke when that happens. Imagine the
-            # following scenario for example: you fetch the threads for a board, then one of those
+            # following scenario, for example: you fetch the threads for a board, then one of those
             # threads gets deleted, then you try to fetch the posts for that thread; this would lead
             # to a 404.
             self._logger.warn(f"Received a 404 status code from {url}")
             return None
         else:
             self._logger.error(f"Unexpected status code {response.status_code} when fetching {url}")
+            if self._raise_http_exceptions:
+                response.raise_for_status()
             return None
 
     def get_boards(self) -> list[str]:
@@ -182,7 +244,8 @@ class FourChan:
     def get_threads(self, board: str) -> Generator[Thread, None, None]:
         """
         Fetches threads for a specific board. Only the first 10 pages of the given board will be
-        returned, because 4chan does not keep any further threads readily-retrievable.
+        returned, because 4chan does not keep any further threads readily-retrievable outside the
+        archive.
 
         :param board: The board name to fetch threads for. You may include slashes. Examples: "/b/",
                       "b", "vg/", "/vg"
@@ -210,17 +273,24 @@ class FourChan:
             if response is not None:
                 soup = BeautifulSoup(response.text, "html.parser")
                 for thread in soup.select(".board > .thread"):
-                    t = Thread(
-                        board,
-                        int(thread["id"][1:]),
-                        title=_text(_find_first(thread, ".desktop .subject")),
-                        is_stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
-                        is_closed=_find_first(thread, ".op .desktop .closedIcon") is not None,
-                        is_archived=_find_first(thread, ".op .desktop .archivedIcon") is not None
-                    )
-                    if t.number not in seen_thread_numbers:
-                        seen_thread_numbers.add(t.number)
-                        yield t
+                    id = _safe_id_parse(_get_attribute(thread, "id"), offset=1)
+                    if id is not None:
+                        t = Thread(
+                            sanitized_board,
+                            id,
+                            title=_text(_find_first(thread, ".desktop .subject")),
+                            is_stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
+                            is_closed=_find_first(thread, ".op .desktop .closedIcon") is not None,
+                            is_archived=_find_first(thread, ".op .desktop .archivedIcon")
+                            is not None
+                        )
+                        if t.number not in seen_thread_numbers:
+                            seen_thread_numbers.add(t.number)
+                            yield t
+                    else:
+                        message = f"No thread ID was discovered in {thread}"
+                        self._logger.error(message)
+                        self._parse_error(message)
             else:
                 self._logger.info((
                     f"Page {p} of /{sanitized_board}/ could not be fetched, so no further threads "
@@ -283,16 +353,17 @@ class FourChan:
             return []
 
         soup = BeautifulSoup(response.text, "html.parser")
-        ret = []
+        ret: list[Post] = []
         for post in soup.select(".post"):
             p = self._parse_post_from_html(t, post)
             if p is not None:
                 for quote_link in post.select(f"{self._POST_TEXT_SELECTOR} a.quotelink"):
-                    if hasattr(quote_link, "href") and quote_link["href"].startswith("#p"):
+                    href = _get_attribute(quote_link, "href")
+                    if href is not None and href.startswith("#p"):
                         # The #p check in the href above also guards against the situation where
                         # a post is quote-linking to a post in a different thread, which is
                         # currently beyond the scope of this function's implementation
-                        quoted_post_number = int(quote_link["href"][2:])
+                        quoted_post_number = _safe_id_parse(href, offset=2)
                         for ret_post in ret:
                             if ret_post.number == quoted_post_number and \
                                     not any([r.number == p.number for r in ret_post.replies]):

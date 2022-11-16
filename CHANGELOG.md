@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.4.0 - 2022-11-16
+
+### Added
+
+* The `FourChan` class now supports the optional exception-oriented arguments `raise_http_exceptions` and `raise_parsing_exceptions` (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* There are now integration tests in the project that will actually connect to 4chan instead of relying on mocks (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* Added project configuration for using `mypy` to statically type-check code during development and in the GitHub Actions pipeline (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* Implemented proper typing throughout the source code and added a `py.typed` file per PEP 561 (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Changed
+
+* The `Thread` class's `board` field will now always feature the "sanitized" version of the board (e.g. `a` instead of `/a/`, `/a`, or `a/`) (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* The `ratelimit` module was replaced with the `pyrate-limiter` module within the internal throttling mechanism (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.3.5 - 2022-11-08
 
 ### Added
