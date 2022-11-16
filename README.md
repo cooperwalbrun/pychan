@@ -56,9 +56,19 @@ from pychan import FourChan, LogLevel, PychanLogger
 # With all logging disabled (default)
 fourchan = FourChan()
 
+# Tell pychan to gracefully ignore HTTP exceptions from its internal logic if an error occurs
+fourchan = FourChan(raise_http_exceptions=False)
+
+# Tell pychan to gracefully ignore parsing exceptions from its internal logic if an error occurs
+fourchan = FourChan(raise_parsing_exceptions=False)
+
 # Configure logging explicitly
 logger = PychanLogger(LogLevel.INFO)
 fourchan = FourChan(logger)
+
+# Use all of the above settings at once
+logger = PychanLogger(LogLevel.INFO)
+fourchan = FourChan(logger=logger, raise_http_exceptions=True, raise_parsing_exceptions=True)
 ```
 
 The rest of the examples in this `README` assume that you have already created an instance of the
@@ -89,6 +99,9 @@ for thread in fourchan.get_threads("b"):
 
 ### Fetch Archived Threads
 
+>Note: some boards do not have an archive (e.g. /b/). Such boards will either return an empty list
+>or raise an exception, depending on how you have configured your `FourChan` instance.
+
 The threads returned by this function will always have a `title` field containing the text shown in
 4chan's interface under the "Excerpt" column header. This text can be either the thread's real title
 or a preview of the original post's text. Passing any of the threads returned by this method to the
@@ -96,7 +109,7 @@ or a preview of the original post's text. Passing any of the threads returned by
 gets attached to the returned posts. See
 [Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread) for more details.
 
->Note that `pychan` could address the `title` behavior described above by issuing an additional
+>Technically, `pychan` could address the `title` behavior described above by issuing an additional
 >HTTP request for each thread to get its real title, but in the spirit of making the smallest number
 >of HTTP requests possible, `pychan` directly uses the excerpt instead.
 
@@ -110,6 +123,8 @@ for thread in fourchan.get_archived_threads("pol"):
 ```
 
 ### Search 4chan
+
+>Note: closed/stickied/archived threads are never returned in search results.
 
 ```python
 # Iterate over all threads returned in the search results lazily (Python Generator)
