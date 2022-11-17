@@ -21,7 +21,7 @@ Nothing currently!
 ### Changed
 
 * The `Thread` class's `board` field will now always feature the "sanitized" version of the board (e.g. `a` instead of `/a/`, `/a`, or `a/`) (by [@cooperwalbrun](https://github.com/cooperwalbrun))
-* The `ratelimit` module was replaced with the `pyrate-limiter` module within the internal throttling mechanism (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* The `ratelimit` module was replaced by the `pyrate-limiter` module within the internal request throttler (by [@cooperwalbrun](https://github.com/cooperwalbrun))
 
 ## v0.3.5 - 2022-11-08
 
