@@ -56,15 +56,15 @@ from pychan import FourChan, LogLevel, PychanLogger
 # With all logging disabled (default)
 fourchan = FourChan()
 
-# Tell pychan to gracefully ignore HTTP exceptions from its internal logic if an error occurs
+# Tell pychan to gracefully ignore HTTP exceptions, if any, within its internal logic
 fourchan = FourChan(raise_http_exceptions=False)
 
-# Tell pychan to gracefully ignore parsing exceptions from its internal logic if an error occurs
+# Tell pychan to gracefully ignore parsing exceptions, if any, within its internal logic
 fourchan = FourChan(raise_parsing_exceptions=False)
 
 # Configure logging explicitly
 logger = PychanLogger(LogLevel.INFO)
-fourchan = FourChan(logger)
+fourchan = FourChan(logger=logger)
 
 # Use all of the above settings at once
 logger = PychanLogger(LogLevel.INFO)
@@ -91,7 +91,9 @@ boards = fourchan.get_boards()
 ```python
 # Iterate over all threads in /b/ lazily (Python Generator)
 for thread in fourchan.get_threads("b"):
-    # Iterate over all posts in each thread
+    # Do stuff with the thread
+    print(thread.title)
+    # You can also iterate over all the posts in the thread
     for post in fourchan.get_posts(thread):
         # Do stuff with the post - refer to the model documentation in pychan's README for details
         print(post.text)
@@ -100,7 +102,7 @@ for thread in fourchan.get_threads("b"):
 ### Fetch Archived Threads
 
 >Note: some boards do not have an archive (e.g. /b/). Such boards will either return an empty list
->or raise an exception, depending on how you have configured your `FourChan` instance.
+>or raise an exception depending on how you have configured your `FourChan` instance.
 
 The threads returned by this function will always have a `title` field containing the text shown in
 4chan's interface under the "Excerpt" column header. This text can be either the thread's real title
@@ -116,7 +118,9 @@ gets attached to the returned posts. See
 ```python
 # Unlike get_threads(), the get_archived_threads() method returns a list instead of a Python Generator
 for thread in fourchan.get_archived_threads("pol"):
-    # Iterate over all posts in each thread
+    # Do stuff with the thread
+    print(thread.title)
+    # You can also iterate over all the posts in the thread
     for post in fourchan.get_posts(thread):
         # Do stuff with the post - refer to the model documentation in pychan's README for details
         print(post.text)
