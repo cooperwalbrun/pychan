@@ -8,7 +8,7 @@ import responses
 from requests import HTTPError
 
 from pychan import FourChan, LogLevel, PychanLogger
-from pychan.api import _safe_id_parse
+from pychan.api import _safe_id_parse, ParsingError
 from pychan.models import Thread, Post, File, Poster
 
 
@@ -40,6 +40,11 @@ def test_safe_id_parse() -> None:
     assert _safe_id_parse("t", offset=1) is None
     assert _safe_id_parse("test", offset=1) is None
     assert _safe_id_parse("t1", offset=1) == 1
+
+
+def test_parse_error(fourchan: FourChan) -> None:
+    with pytest.raises(ParsingError):
+        fourchan._parse_error("test")
 
 
 @responses.activate
