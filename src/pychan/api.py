@@ -192,6 +192,7 @@ class FourChan:
         self,
         url: str,
         *,
+        expect_404: bool = False,
         headers: Optional[dict[str, str]] = None,
         params: Optional[dict[str, str]] = None
     ) -> Optional[Response]:
@@ -202,12 +203,10 @@ class FourChan:
         if response.status_code == 200:
             return response
         elif response.status_code == 404:
-            # We have to swallow 404 errors because threads can be deleted in real-time between the
-            # HTTP requests pychan sends, and we do not want to choke when that happens. Imagine the
-            # following scenario, for example: you fetch the threads for a board, then one of those
-            # threads gets deleted, then you try to fetch the posts for that thread; this would lead
-            # to a 404.
-            self._logger.warn(f"Received a 404 status code from {url}")
+            if not expect_404:
+                self._logger.warn(f"Received a 404 status code from {url}")
+                if self._raise_http_exceptions:
+                    response.raise_for_status()
             return None
         else:
             self._logger.error(f"Unexpected status code {response.status_code} when fetching {url}")
@@ -258,7 +257,10 @@ class FourChan:
 
         def get(page_number: int) -> Optional[Response]:
             suffix = f"/{page_number}" if page_number > 1 else ""
-            return self._request_helper(f"https://boards.4channel.org/{sanitized_board}" + suffix)
+            return self._request_helper(
+                f"https://boards.4channel.org/{sanitized_board}" + suffix,
+                expect_404=page_number != 1
+            )
 
         seen_thread_numbers = set()
 
@@ -383,7 +385,7 @@ class FourChan:
 
     def search(self, *, board: str, text: str) -> Generator[Thread, None, None]:
         """
-        Searches a given text query in a given board. This method leverages 4chan's native search
+        Executes a given text query in a given board. This method leverages 4chan's native search
         functionality.
 
         :param board: The board within which to perform the search. You may include slashes.
