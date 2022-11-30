@@ -1,4 +1,4 @@
-# pychan ![master](https://github.com/cooperwalbrun/pychan/workflows/master/badge.svg) ![PyPI](https://img.shields.io/pypi/v/pychan) [![codecov](https://codecov.io/gh/cooperwalbrun/pychan/branch/master/graph/badge.svg?token=BJEJOMIYWY)](https://codecov.io/gh/cooperwalbrun/pychan)
+# pychan [![master](https://github.com/cooperwalbrun/pychan/actions/workflows/master.yml/badge.svg)](https://github.com/cooperwalbrun/pychan/actions/workflows/master.yml) [![PyPI](https://img.shields.io/pypi/v/pychan)](https://pypi.org/project/pychan) [![codecov](https://codecov.io/gh/cooperwalbrun/pychan/branch/master/graph/badge.svg?token=BJEJOMIYWY)](https://codecov.io/gh/cooperwalbrun/pychan)
 
 1. [Overview](#overview)
 2. [Installation](#installation)
