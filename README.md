@@ -53,7 +53,7 @@ reached internally by the generator, it stops returning threads.
 ```python
 from pychan import FourChan, LogLevel, PychanLogger
 
-# With all logging disabled (default)
+# With all defaults (logging disabled, all exceptions raised)
 fourchan = FourChan()
 
 # Tell pychan to gracefully ignore HTTP exceptions, if any, within its internal logic
@@ -164,6 +164,7 @@ Also note that all model classes in `pychan` implement the following methods:
 * `__str__`
 * `__hash__`
 * `__eq__`
+* `__iter__` - this is implemented so that the models may be passed to Python's `tuple()` function
 * `__copy__`
 * `__deepcopy__`
 
