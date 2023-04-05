@@ -47,12 +47,27 @@ def test_parse_error(fourchan: FourChan) -> None:
         fourchan._parse_error("test")
 
 
+def test_parse_catalog_json(fourchan: FourChan) -> None:
+    # yapf: disable
+    tests = {
+        'var catalog = {"test": "test"};': {"test": "test"},
+        'var catalog = {"t1": "t1"};var x = {"t2": "t2"};': {"t1": "t1"},
+        'var x = {"t2": "t2"};var catalog = {"t1": "t1"};': {"t1": "t1"},
+        'var catalog = {"te};st": "te};st"};': {"te};st": "te};st"}
+    }
+    # yapf: enable
+    for input, expected_json in tests.items():
+        assert fourchan._parse_catalog_json_from_javascript(input) == expected_json
+
+
 @responses.activate
 def test_get_boards(fourchan: FourChan) -> None:
-    with open(f"{os.path.dirname(__file__)}/html/pol_threads.html", "r", encoding="utf-8") as file:
+    with open(f"{os.path.dirname(__file__)}/html/pol_catalog.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
-    responses.add(responses.GET, "https://boards.4channel.org/pol", status=200, body=test_data)
+    responses.add(
+        responses.GET, "https://boards.4channel.org/pol/catalog", status=200, body=test_data
+    )
     boards = fourchan.get_boards()
 
     assert "tv" in boards
@@ -65,16 +80,11 @@ def test_get_boards(fourchan: FourChan) -> None:
 def test_get_threads(fourchan: FourChan) -> None:
     board = "pol"
 
-    with open(f"{os.path.dirname(__file__)}/html/pol_threads.html", "r", encoding="utf-8") as file:
+    with open(f"{os.path.dirname(__file__)}/html/pol_catalog.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
-    responses.add(responses.GET, f"https://boards.4channel.org/{board}", status=200, body=test_data)
     responses.add(
-        # This response terminates the iteration within the generator (normally a 404 would not
-        # happen until page 11, but for testing purposes we do it on page 2)
-        responses.GET,
-        f"https://boards.4channel.org/{board}/2",
-        status=404
+        responses.GET, f"https://boards.4channel.org/{board}/catalog", status=200, body=test_data
     )
 
     expected = [
@@ -86,31 +96,12 @@ def test_get_threads(fourchan: FourChan) -> None:
             is_closed=True
         ),
         Thread(board, 259848258, is_stickied=True, is_closed=True),
-        Thread(board, 388895332, title="What is her end game?"),
-        Thread(board, 388890794, title="I really truly deeply don't get it"),
-        Thread(board, 388890337, title="/tg/ - Taiwan General"),
-        Thread(board, 388895822),
-        Thread(board, 388895815),
-        Thread(board, 388893920, title="What exactly is the problem with being trans?"),
-        Thread(board, 388894042, title="Monkeypox General"),
-        Thread(board, 388883227, title="Crusades are underrated"),
-        Thread(board, 388892393, title="Doesnt eat Insects but eats Honey, hypocrisy?"),
-        Thread(board, 388895633),
-        Thread(board, 388895430),
-        Thread(board, 388895780),
-        Thread(board, 388894935),
-        Thread(
-            board,
-            388871008,
-            title="/MOG/ - Monkeypox Outbreak General #128 - First Deaths Brazil/Spain"
-        ),
-        Thread(board, 388892859, title="Detransitioning"),
-        Thread(board, 388894121),
-        Thread(board, 388890979, title="/chug/ - Comfy Happening in Ukraine General #4740"),
-        Thread(board, 388891424)
+        Thread(board, 422352356, title="Who is “The Market”?"),
+        Thread(board, 422343879, title="ITS OVER"),
+        Thread(board, 422321472, title="jewess steals 175 million from chase bank through fraud"),
     ]
-    actual = list(fourchan.get_threads(board))
-    assert len(expected) == len(actual)
+    actual = fourchan.get_threads(board)
+    assert len(actual) == 202
     for i, thread in enumerate(expected):
         assert tuple(thread) == tuple(actual[i])
 
@@ -126,25 +117,23 @@ def test_get_threads_http_errors(fourchan: FourChan, fourchan_no_raises: FourCha
     def with_mocks(status: int, function: Callable[[], None]) -> None:
         # The method should only attempt to fetch the first page, because the generator should
         # terminate once it reaches a page that was not retrievable
-        responses.add(responses.GET, f"https://boards.4channel.org/{board}", status=status)
+        responses.add(responses.GET, f"https://boards.4channel.org/{board}/catalog", status=status)
         function()
 
-    def helper_no_raises() -> None:
+    def helper_without_raises() -> None:
         actual = list(fourchan_no_raises.get_threads(board))
         assert len(actual) == 0
-        responses.assert_call_count(f"https://boards.4channel.org/{board}", count=1)
-        responses.assert_call_count(f"https://boards.4channel.org/{board}/2", count=0)
+        responses.assert_call_count(f"https://boards.4channel.org/{board}/catalog", count=1)
 
     def helper() -> None:
         with pytest.raises(HTTPError):
-            # The call to list() below forces the generator to execute; without it, the actual HTTP
-            # call never happens
-            list(fourchan.get_threads(board))
+            fourchan.get_threads(board)
 
-    with_mocks(403, helper_no_raises)
-    with_mocks(404, helper_no_raises)
-    with_mocks(500, helper_no_raises)
+    with_mocks(403, helper_without_raises)
+    with_mocks(404, helper_without_raises)
+    with_mocks(500, helper_without_raises)
     with_mocks(403, helper)
+    with_mocks(404, helper)
     with_mocks(500, helper)
 
 
@@ -156,7 +145,7 @@ def test_get_archived_threads(fourchan: FourChan) -> None:
         test_data = file.read()
 
     responses.add(
-        responses.GET, f"https://boards.4chan.org/{board}/archive", status=200, body=test_data
+        responses.GET, f"https://boards.4channel.org/{board}/archive", status=200, body=test_data
     )
 
     threads = fourchan.get_archived_threads(board)
@@ -168,7 +157,7 @@ def test_get_archived_threads(fourchan: FourChan) -> None:
 
 def test_get_archived_threads_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan) -> None:
     board = "pol"
-    url = f"https://boards.4chan.org/{board}/archive"
+    url = f"https://boards.4channel.org/{board}/archive"
 
     @responses.activate
     def with_mocks(status: int, function: Callable[[], None]) -> None:
@@ -238,7 +227,8 @@ def test_get_posts(fourchan: FourChan) -> None:
             file=File(
                 "https://i.4cdn.org/pol/1658892700380132.jpg",
                 "hitler miss kromier.jpg",
-                "106 KB", (800, 600)
+                "106 KB", (800, 600),
+                is_spoiler=False
             ),
             replies=[reply1, reply2]
         ),

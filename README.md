@@ -28,7 +28,7 @@ performance and minimize superfluous blocking I/O operations.
 
 ## Installation
 
-If you have Python >=3.9 and <4.0 installed, `pychan` can be installed from PyPI using
+If you have Python >=3.10 and <4.0 installed, `pychan` can be installed from PyPI using
 something like
 
 ```bash
@@ -42,11 +42,6 @@ pip install pychan
 All 4chan interactions are throttled internally by sleeping the executing thread. If you execute
 `pychan` in a multithreaded way, you will not get the benefits of this throttling. `pychan` does not
 take responsibility for the consequences of excessive HTTP requests in such cases.
-
-For all thread-level iteration shown below, the generators returned  will maintain internal state
-about which page of 4chan you are currently on. Threads are fetched one page at a time up to page 10
-(which is the highest page at which 4chan renders threads for any given board). Once page 11 is
-reached internally by the generator, it stops returning threads.
 
 ### Setup
 
@@ -89,7 +84,7 @@ boards = fourchan.get_boards()
 ### Fetch Threads
 
 ```python
-# Iterate over all threads in /b/ lazily (Python Generator)
+# Iterate over all threads in /b/
 for thread in fourchan.get_threads("b"):
     # Do stuff with the thread
     print(thread.title)
@@ -116,7 +111,6 @@ gets attached to the returned posts. See
 >of HTTP requests possible, `pychan` directly uses the excerpt instead.
 
 ```python
-# Unlike get_threads(), the get_archived_threads() method returns a list instead of a Python Generator
 for thread in fourchan.get_archived_threads("pol"):
     # Do stuff with the thread
     print(thread.title)
@@ -224,6 +218,7 @@ The table below corresponds to the `pychan.models.File` class.
 | `file.name` | `str` | `"wojak.jpg"`, `"i feel alone.jpg"`
 | `file.size` | `str` | `"601 KB"`
 | `file.dimensions` | `tuple[int, int]` | `(1920, 1080)`, `(800, 600)`
+| `file.is_spoiler` | `bool` | `True`, `False`
 
 ## Contributing
 

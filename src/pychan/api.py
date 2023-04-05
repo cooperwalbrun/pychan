@@ -1,7 +1,8 @@
 import copy
+import json
 import re
 from datetime import datetime, timezone
-from typing import Optional, Generator, Any
+from typing import Optional, Generator, TypedDict, cast
 from uuid import uuid4
 
 import requests
@@ -36,8 +37,7 @@ def _get_attribute(tag: Optional[Tag], attribute: str) -> Optional[str]:
 
 def _safe_id_parse(text: Optional[str], *, offset: int) -> Optional[int]:
     # This function is meant to parse ID attribute values from 4chan's HTML into numeric values
-    # containing just the raw ID number. For example, _safe_id_parse("t-12345678", offset=1) should
-    # return 12345678.
+    # containing just the raw ID number. Refer to the unit tests to see expected inputs/outputs.
     if text is not None and len(text) > offset:
         try:
             return int(text[offset:])
@@ -47,12 +47,20 @@ def _safe_id_parse(text: Optional[str], *, offset: int) -> Optional[int]:
         return None
 
 
-def _text(element: Optional[Any]) -> Optional[str]:
+def _text(element: Optional[Tag]) -> Optional[str]:
     return element.text if element is not None and len(element.text.strip()) > 0 else None
 
 
 def _sanitize_board(board: str) -> str:
     return board.lower().replace("/", "").strip()
+
+
+JSONThread = TypedDict(
+    "JSONThread", {
+        "sub": Optional[str | bool], "sticky": Optional[int], "closed": Optional[int]
+    }
+)
+JSONCatalog = TypedDict("JSONCatalog", {"threads": dict[str, JSONThread]})
 
 
 class ParsingError(Exception):
@@ -102,7 +110,12 @@ class FourChan:
             if metadata is not None and len(metadata.groups()) > 1:
                 size = metadata.group(1)
                 dimensions = metadata.group(2).split("x")
-                return File(href, file_anchor.text, size, (int(dimensions[0]), int(dimensions[1])))
+                return File(
+                    href,
+                    file_anchor.text,
+                    size, (int(dimensions[0]), int(dimensions[1])),
+                    is_spoiler=_find_first(post_html_element, ".imgspoiler") is not None
+                )
             else:
                 message = f"No file metadata could not be parsed from {file_text.text}"
                 self._logger.error(message)
@@ -171,6 +184,28 @@ class FourChan:
             self._parse_error(message)
             return None
 
+    def _parse_catalog_json_from_javascript(self, javascript_text: str) -> Optional[JSONCatalog]:
+        text = javascript_text
+        result = re.search(r"var\s*catalog\s*=\s*({.+};)", text)
+        if result is None:
+            return None
+
+        while result is not None:
+            candidate = result.group(1).removesuffix(";")
+            try:
+                return cast(JSONCatalog, json.loads(candidate))
+            except:
+                text = candidate[:-1]
+                # We already removed the "var catalog" portion above, so now we just check the JSON
+                result = re.search(r"({.+};)", text)
+
+        message = (
+            f"Unable to parse the catalog JSON out of the following JavaScript: {javascript_text}"
+        )
+        self._logger.error(message)
+        self._parse_error(message)
+        return None
+
     def _is_unparsable_board(self, board: str) -> bool:
         if board in self._UNPARSABLE_BOARDS:
             self._logger.warn((
@@ -224,10 +259,10 @@ class FourChan:
         ret = []
         self._logger.info("Fetching all boards from 4chan...")
 
-        # Below, we use https://boards.4channel.org/pol instead of the homepage of 4chan due to
-        # CloudFlare (and at the time of this writing, the VeNoMouS/cloudscraper repository on
+        # Below, we use https://boards.4channel.org/pol/catalog instead of the homepage of 4chan due
+        # to CloudFlare (and at the time of this writing, the VeNoMouS/cloudscraper repository on
         # GitHub does not work and seems to have disabled GitHub issues entirely)
-        response = self._request_helper("https://boards.4channel.org/pol")
+        response = self._request_helper("https://boards.4channel.org/pol/catalog")
         if response is not None:
             soup = BeautifulSoup(response.text, "html.parser")
             board_list = _find_first(soup, ".boardList")
@@ -240,64 +275,54 @@ class FourChan:
         self._logger.info(f"Fetched {len(ret)} board(s) from 4chan")
         return ret
 
-    def get_threads(self, board: str) -> Generator[Thread, None, None]:
+    def get_threads(self, board: str) -> list[Thread]:
         """
-        Fetches threads for a specific board. Only the first 10 pages of the given board will be
-        returned, because 4chan does not keep any further threads readily-retrievable outside the
-        archive.
+        Fetches all threads from a given board's catalog.
 
         :param board: The board name to fetch threads for. You may include slashes. Examples: "/b/",
                       "b", "vg/", "/vg"
-        :return: A Generator which yields threads one at a time until every thread in the given
-                 board has been returned.
+        :return: A list of threads currently in the board.
         """
         sanitized_board = _sanitize_board(board)
         if self._is_unparsable_board(sanitized_board):
-            return
+            return []
 
-        def get(page_number: int) -> Optional[Response]:
-            suffix = f"/{page_number}" if page_number > 1 else ""
-            return self._request_helper(
-                f"https://boards.4channel.org/{sanitized_board}" + suffix,
-                expect_404=page_number != 1
-            )
+        self._logger.info(f"Fetching threads for board /{sanitized_board}/...")
 
-        seen_thread_numbers = set()
+        response = self._request_helper(f"https://boards.4channel.org/{sanitized_board}/catalog")
+        if response is not None:
+            soup = BeautifulSoup(response.text, "html.parser")
+            for script in soup.select('script[type="text/javascript"]'):
+                json_data = self._parse_catalog_json_from_javascript(script.text)
+                if json_data is not None and "threads" in json_data and \
+                        isinstance(json_data["threads"], dict):
+                    ret = []
+                    for id, thread in json_data["threads"].items():
+                        parsed_id = _safe_id_parse(id, offset=0)
+                        if parsed_id is not None:
+                            title = thread.get("sub")
+                            if isinstance(title, bool):
+                                # The title will only be a boolean if no title exists (False)
+                                title = None
+                            ret.append(
+                                Thread(
+                                    sanitized_board,
+                                    parsed_id,
+                                    title=title if title is not None and len(title) > 0 else None,
+                                    is_stickied=thread.get("sticky") == 1,
+                                    is_closed=thread.get("closed") == 1
+                                )
+                            )
 
-        p = 0
-        response = None
-        while p == 0 or response is not None:
-            p += 1
-
-            self._logger.info(f"Fetching page {p} of /{sanitized_board}/...")
-            response = get(p)
-
-            if response is not None:
-                soup = BeautifulSoup(response.text, "html.parser")
-                for thread in soup.select(".board > .thread"):
-                    id = _safe_id_parse(_get_attribute(thread, "id"), offset=1)
-                    if id is not None:
-                        t = Thread(
-                            sanitized_board,
-                            id,
-                            title=_text(_find_first(thread, ".desktop .subject")),
-                            is_stickied=_find_first(thread, ".op .desktop .stickyIcon") is not None,
-                            is_closed=_find_first(thread, ".op .desktop .closedIcon") is not None,
-                            is_archived=_find_first(thread, ".op .desktop .archivedIcon")
-                            is not None
-                        )
-                        if t.number not in seen_thread_numbers:
-                            seen_thread_numbers.add(t.number)
-                            yield t
-                    else:
-                        message = f"No thread ID was discovered in {thread}"
-                        self._logger.error(message)
-                        self._parse_error(message)
-            else:
-                self._logger.info((
-                    f"Page {p} of /{sanitized_board}/ could not be fetched, so no further threads "
-                    f"will be returned"
-                ))
+                    if len(ret) > 0:
+                        return ret
+        message = (
+            f"No thread data could be parsed out of the HTML for the catalog page of the board "
+            f"/{sanitized_board}/"
+        )
+        self._logger.error(message)
+        self._parse_error(message)
+        return []
 
     def get_archived_threads(self, board: str) -> list[Thread]:
         """
@@ -313,7 +338,9 @@ class FourChan:
         if self._is_unparsable_board(sanitized_board):
             return []
 
-        response = self._request_helper(f"https://boards.4chan.org/{sanitized_board}/archive")
+        self._logger.info(f"Fetching archived threads for board /{sanitized_board}/...")
+
+        response = self._request_helper(f"https://boards.4channel.org/{sanitized_board}/archive")
         ret = []
         if response is not None:
             soup = BeautifulSoup(response.text, "html.parser")
@@ -347,7 +374,8 @@ class FourChan:
         if self._is_unparsable_board(t.board):
             return []
 
-        self._logger.debug(f"Fetching posts for {t}...")
+        self._logger.info(f"Fetching posts for {t}...")
+
         response = self._request_helper(
             "https://boards.4channel.org/{}/thread/{}/".format(t.board, t.number)
         )
@@ -365,7 +393,7 @@ class FourChan:
                         # The #p check in the href above also guards against the situation where
                         # a post is quote-linking to a post in a different thread, which is
                         # currently beyond the scope of this function's implementation
-                        quoted_post_number = _safe_id_parse(href, offset=2)
+                        quoted_post_number = _safe_id_parse(href, offset=len("#p"))
                         for ret_post in ret:
                             if ret_post.number == quoted_post_number and \
                                     not any([r.number == p.number for r in ret_post.replies]):
@@ -415,6 +443,11 @@ class FourChan:
         new_this_iteration = True
         while new_this_iteration:
             new_this_iteration = False
+
+            self._logger.info((
+                f"Searching offset {offset} for threads in board /{sanitized_board}/ matching text "
+                f'"{text}"...'
+            ))
 
             response = get(offset)
             offset += 10

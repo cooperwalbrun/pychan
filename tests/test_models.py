@@ -17,7 +17,7 @@ def test_thread_equality() -> None:
     # Test comparisons with non-Thread data types
     poster = Poster("test")
     post = Post(t1, 1337, _TIMESTAMP, poster, "test")
-    file = File("test", "test", "1337 KB", (1920, 1080))
+    file = File("test", "test", "1337 KB", (1920, 1080), is_spoiler=False)
     assert t1 != post
     assert t1 != file
     assert t1 != poster
@@ -35,19 +35,21 @@ def test_post_equality() -> None:
     assert p1 != p3
 
     # Test comparisons with non-Post data types
-    file = File("test", "test", "1337 KB", (1920, 1080))
+    file = File("test", "test", "1337 KB", (1920, 1080), is_spoiler=False)
     assert p1 != t1
     assert p1 != file
     assert p1 != poster
 
 
 def test_file_equality() -> None:
-    f1 = File("test", "test", "1337 KB", (1920, 1080))
-    f2 = File("test", "test2", "1337 KB", (1920, 1080))
-    f3 = File("test2", "test", "1337 KB", (1920, 1080))
+    f1 = File("test", "test", "1337 KB", (1920, 1080), is_spoiler=False)
+    f2 = File("test", "test2", "1337 KB", (1920, 1080), is_spoiler=False)
+    f3 = File("test2", "test", "1337 KB", (1920, 1080), is_spoiler=False)
+    f4 = File("test2", "test", "1337 KB", (1920, 1080), is_spoiler=True)
     assert f1 == f1
     assert f1 == f2
     assert f1 != f3
+    assert f3 == f4
 
     # Test comparisons with non-File data types
     thread = Thread("b", 1337)
@@ -71,7 +73,7 @@ def test_poster_equality() -> None:
     # Test comparisons with non-Poster data types
     thread = Thread("b", 1337)
     post = Post(thread, 1337, _TIMESTAMP, p1, "test")
-    file = File("test", "test", "1337 KB", (1920, 1080))
+    file = File("test", "test", "1337 KB", (1920, 1080), is_spoiler=False)
     assert p1 != thread
     assert p1 != post
     assert p1 != file
@@ -89,8 +91,8 @@ def test_poster_properties() -> None:
 
 
 def test_serialization() -> None:
-    file = File("test", "test", "1337 KB", (1920, 1080))
-    assert tuple(file) == ("test", "test", "1337 KB", (1920, 1080))
+    file = File("test", "test", "1337 KB", (1920, 1080), is_spoiler=False)
+    assert tuple(file) == ("test", "test", "1337 KB", (1920, 1080), False)
 
     poster = Poster("test")
     assert tuple(poster) == ("test", False, None, None)
@@ -143,7 +145,7 @@ def test_copying() -> None:
     assert thread is not thread_copy
     assert thread is not thread_deepcopy
 
-    file = File("test", "test", "1337 KB", (1920, 1080))
+    file = File("test", "test", "1337 KB", (1920, 1080), is_spoiler=False)
     file_copy = copy.copy(file)
     file_deepcopy = copy.deepcopy(file)
     assert file == file_copy == file_deepcopy

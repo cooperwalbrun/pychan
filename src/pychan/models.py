@@ -68,11 +68,14 @@ class Thread:
 
 
 class File:
-    def __init__(self, url: str, name: str, size: str, dimensions: tuple[int, int]):
+    def __init__(
+        self, url: str, name: str, size: str, dimensions: tuple[int, int], *, is_spoiler: bool
+    ):
         self.url = url
         self.name = name
         self.size = size
         self.dimensions = dimensions
+        self.is_spoiler = is_spoiler
 
     def __repr__(self) -> str:
         return f"File({self.url})"
@@ -91,18 +94,19 @@ class File:
 
     def __iter__(self) -> Generator[Any, None, None]:
         # We implement __iter__ so this class can be serialized as a tuple
-        for field in [self.url, self.name, self.size, self.dimensions]:
+        for field in [self.url, self.name, self.size, self.dimensions, self.is_spoiler]:
             yield field
 
     def __copy__(self):
-        return File(self.url, self.name, self.size, self.dimensions)
+        return File(self.url, self.name, self.size, self.dimensions, is_spoiler=self.is_spoiler)
 
     def __deepcopy__(self, memo: dict[Any, Any]):
         return File(
             copy.deepcopy(self.url, memo),
             copy.deepcopy(self.name, memo),
             copy.deepcopy(self.size, memo),
-            copy.deepcopy(self.dimensions, memo)
+            copy.deepcopy(self.dimensions, memo),
+            is_spoiler=self.is_spoiler
         )
 
 
