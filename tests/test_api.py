@@ -49,10 +49,10 @@ def test_parse_error(fourchan: FourChan) -> None:
 
 @responses.activate
 def test_get_boards(fourchan: FourChan) -> None:
-    with open(f"{os.path.dirname(__file__)}/html/search_page.html", "r", encoding="utf-8") as file:
+    with open(f"{os.path.dirname(__file__)}/html/pol_threads.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
-    responses.add(responses.GET, "https://boards.4channel.org/search", status=200, body=test_data)
+    responses.add(responses.GET, "https://boards.4channel.org/pol", status=200, body=test_data)
     boards = fourchan.get_boards()
 
     assert "tv" in boards
@@ -68,14 +68,12 @@ def test_get_threads(fourchan: FourChan) -> None:
     with open(f"{os.path.dirname(__file__)}/html/pol_threads.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
-    responses.add(
-        responses.GET, url=f"https://boards.4channel.org/{board}", status=200, body=test_data
-    )
+    responses.add(responses.GET, f"https://boards.4channel.org/{board}", status=200, body=test_data)
     responses.add(
         # This response terminates the iteration within the generator (normally a 404 would not
         # happen until page 11, but for testing purposes we do it on page 2)
         responses.GET,
-        url=f"https://boards.4channel.org/{board}/2",
+        f"https://boards.4channel.org/{board}/2",
         status=404
     )
 
@@ -128,14 +126,14 @@ def test_get_threads_http_errors(fourchan: FourChan, fourchan_no_raises: FourCha
     def with_mocks(status: int, function: Callable[[], None]) -> None:
         # The method should only attempt to fetch the first page, because the generator should
         # terminate once it reaches a page that was not retrievable
-        responses.add(responses.GET, url=f"https://boards.4channel.org/{board}", status=status)
+        responses.add(responses.GET, f"https://boards.4channel.org/{board}", status=status)
         function()
 
     def helper_no_raises() -> None:
         actual = list(fourchan_no_raises.get_threads(board))
         assert len(actual) == 0
-        responses.assert_call_count(url=f"https://boards.4channel.org/{board}", count=1)
-        responses.assert_call_count(url=f"https://boards.4channel.org/{board}/2", count=0)
+        responses.assert_call_count(f"https://boards.4channel.org/{board}", count=1)
+        responses.assert_call_count(f"https://boards.4channel.org/{board}/2", count=0)
 
     def helper() -> None:
         with pytest.raises(HTTPError):
@@ -158,7 +156,7 @@ def test_get_archived_threads(fourchan: FourChan) -> None:
         test_data = file.read()
 
     responses.add(
-        responses.GET, url=f"https://boards.4chan.org/{board}/archive", status=200, body=test_data
+        responses.GET, f"https://boards.4chan.org/{board}/archive", status=200, body=test_data
     )
 
     threads = fourchan.get_archived_threads(board)
@@ -176,13 +174,13 @@ def test_get_archived_threads_http_errors(fourchan: FourChan, fourchan_no_raises
     def with_mocks(status: int, function: Callable[[], None]) -> None:
         # The method should only attempt to fetch the first page, because the generator should
         # terminate once it reaches a page that was not retrievable
-        responses.add(responses.GET, url=url, status=status)
+        responses.add(responses.GET, url, status=status)
         function()
 
     def helper_no_raises() -> None:
         actual = list(fourchan_no_raises.get_archived_threads(board))
         assert len(actual) == 0
-        responses.assert_call_count(url=url, count=1)
+        responses.assert_call_count(url, count=1)
 
     def helper() -> None:
         with pytest.raises(HTTPError):

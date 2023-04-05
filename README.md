@@ -199,10 +199,9 @@ The table below corresponds to the `pychan.models.Post` class.
 #### A Note About Replies
 
 The `replies` field shown above is purely a convenience feature `pychan` provides for accessing all
-posts within a thread that use the `>>` operator to "reply" to a post earlier in the thread. If you
-were to iterate over all posts in a thread via `get_posts()`, you would obtain all posts and their
-replies (in the order they were posted) as a single list. You do *not* have to access the `replies`
-field to access all the posts in a given thread.
+posts within a thread which used the `>>` operator to "reply" to the current post. When you call the
+`get_posts()` method, you will still receive every available post and reply (in the order they were
+all posted) as a single, flat list.
 
 ### Posters
 

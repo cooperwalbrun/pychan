@@ -224,10 +224,10 @@ class FourChan:
         ret = []
         self._logger.info("Fetching all boards from 4chan...")
 
-        # Below, we use https://boards.4channel.org/search instead of the homepage of 4chan due to
+        # Below, we use https://boards.4channel.org/pol instead of the homepage of 4chan due to
         # CloudFlare (and at the time of this writing, the VeNoMouS/cloudscraper repository on
         # GitHub does not work and seems to have disabled GitHub issues entirely)
-        response = self._request_helper("https://boards.4channel.org/search")
+        response = self._request_helper("https://boards.4channel.org/pol")
         if response is not None:
             soup = BeautifulSoup(response.text, "html.parser")
             board_list = _find_first(soup, ".boardList")
