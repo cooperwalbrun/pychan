@@ -18,8 +18,13 @@ Nothing currently!
 
 ### Changed
 
-* The `get_threads()` method no longer pages through boards; instead, it directly scrapes threads
-  from the singular `/catalog` page for that board (by
+* The `get_threads()` method no longer iterates through a board's pages; instead, it directly
+  scrapes threads from the catalog for the given board (by
+  [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Removed
+
+* Support for Python 3.9 has been removed: `pychan` will now only build for Python 3.10 and 3.11 (by
   [@cooperwalbrun](https://github.com/cooperwalbrun))
 
 ## v0.4.2 - 2023-04-04

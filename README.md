@@ -28,7 +28,7 @@ performance and minimize superfluous blocking I/O operations.
 
 ## Installation
 
-If you have Python >=3.9 and <4.0 installed, `pychan` can be installed from PyPI using
+If you have Python >=3.10 and <4.0 installed, `pychan` can be installed from PyPI using
 something like
 
 ```bash
