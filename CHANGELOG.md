@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.5.0 - 2023-04-05
+
+### Added
+
+* The `File` model now has an `is_spoiler` field indicating whether the image was a "spoiler" image
+  (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Changed
+
+* The `get_threads()` method no longer pages through boards; instead, it directly scrapes threads
+  from the singular `/catalog` page for that board (by
+  [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.4.2 - 2023-04-04
 
 ### Fixed

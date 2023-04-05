@@ -20,8 +20,9 @@ def test_get_boards_no_mocks(fourchan: FourChan) -> None:
 def test_get_threads_and_get_posts_no_mocks(fourchan: FourChan) -> None:
     # Test fetching threads
     threads = fourchan.get_threads("/a")
-    first_ten_threads = list(itertools.islice(threads, 10))
-    for thread in first_ten_threads:
+    assert len(threads) > 100
+
+    for thread in threads:
         assert thread.number > 0
         assert thread.board == "a"
         assert not thread.is_archived
@@ -29,7 +30,7 @@ def test_get_threads_and_get_posts_no_mocks(fourchan: FourChan) -> None:
             assert len(thread.title) > 0  # Titles should be None instead of "" when empty
 
     # Test fetching posts using one of the threads from above
-    posts = fourchan.get_posts(first_ten_threads[0])
+    posts = fourchan.get_posts(threads[0])
     assert posts[0].is_original_post  # There will always be at least 1 post (the original post)
     assert posts[0].file is not None  # Original posts must always include a file
     (file_x, file_y) = posts[0].file.dimensions
@@ -37,7 +38,7 @@ def test_get_threads_and_get_posts_no_mocks(fourchan: FourChan) -> None:
     assert file_y > 0
     for post in posts:
         assert post.number > 0
-        assert post.thread == first_ten_threads[0]
+        assert post.thread == threads[0]
         assert len(post.text) > 0
 
 
