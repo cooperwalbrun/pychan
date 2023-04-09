@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.6.0 - 2023-04-09
+
+### Added
+
+* The `Thread` and `Post` models each now have a `url` property which contains a complete URL
+  linking directly to that particular thread or post in 4chan (by
+  [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Fixed
+
+* The `search()` method will now raise a `ParsingError` when the data returned from 4chan is in an
+  unexpected format (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* The `search()` method will no longer induce HTTP 403 errors (thanks to its new Cloudflare-oriented
+  arguments) (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
+### Changed
+
+* Whitespace-only thread titles will now be converted into `None` within the `get_threads()` method
+  (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+* The `search()` method now expects `user_agent` and `cloudflare_cookies` arguments containing the
+  `User-Agent` and `Cookie` header data needed to bypass the Cloudflare firewall in front of 4chan's
+  REST API (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.5.0 - 2023-04-05
 
 ### Added
@@ -24,7 +47,7 @@ Nothing currently!
 
 ### Removed
 
-* Support for Python 3.9 has been removed: `pychan` will now only build for Python 3.10 and 3.11 (by
+* Support for Python 3.9 has been removed; `pychan` will now only build for Python 3.10 and 3.11 (by
   [@cooperwalbrun](https://github.com/cooperwalbrun))
 
 ## v0.4.2 - 2023-04-04

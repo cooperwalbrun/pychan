@@ -9,6 +9,8 @@
    4. [Fetch Threads](#fetch-threads)
    5. [Fetch Archived Threads](#fetch-archived-threads)
    6. [Search 4chan](#search-4chan)
+      1. [About Cloudflare](#about-cloudflare)
+      2. [Search 4chan Code Example](#search-4chan-code-example)
    7. [Fetch Posts for a Specific Thread](#fetch-posts-for-a-specific-thread)
 4. [pychan Models](#pychan-models)
    1. [Threads](#threads)
@@ -122,11 +124,46 @@ for thread in fourchan.get_archived_threads("pol"):
 
 ### Search 4chan
 
+#### About Cloudflare
+
+Performing searches against 4chan is much more cumbersome than accessing the rest of 4chan's data.
+This is because 4chan has a Cloudflare firewall in front of its REST API, so the only way to get
+data back from searches is to supply the HTTP request information needed to bypass Cloudflare's
+anti-bot checks. Ultimately, this amounts to passing certain headers along with the HTTP request,
+but the challenge comes from actually acquiring such headers.
+
+It is currently beyond the scope of `pychan` to generate these headers for you, so if you would like
+to automate the circumvention of Cloudflare's protections, you may want to look into using a project
+like one of the following (this list is alphabetized and not exhaustive):
+
+* [ultrafunkamsterdam/undetected-chromedriver](https://github.com/ultrafunkamsterdam/undetected-chromedriver)
+* [VeNoMouS/cloudscraper](https://github.com/VeNoMouS/cloudscraper)
+* [wkeeling/selenium-wire](https://github.com/wkeeling/selenium-wire)
+
+A manual way to acquire these values is to perform a 4chan search using a web browser and leverage
+the browser's Developer Tools to trace the network requests that were made during the search. The
+request that contains the Cloudflare values will have been made to `https://find.4channel.org/api`
+with some query parameters. Once you have found this request, copy the `User-Agent` and `Cookie`
+values that were sent in your request, then pass them to `pychan`'s `search()` method. Be aware that
+the Cloudflare cookie(s) have an expiration on them, so this manual workaround will only return
+results until Cloudflare invalidates your cookie(s). After that, you will need to acquire new
+values.
+
+#### Search 4chan Code Example
+
 >Note: closed/stickied/archived threads are never returned in search results.
 
 ```python
-# Iterate over all threads returned in the search results lazily (Python Generator)
-for thread in fourchan.search(board="b", text="ylyl"):
+# This "threads" variable will contain a Python Generator (not a list) in order to facilitate laziness
+threads = fourchan.search(
+   board="b",
+   text="ylyl",
+   user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+   cloudflare_cookies={
+      "cf_clearance": "bm2RICpcDeR4cXoC2nfI_cnZcbAkN4UYpN6c1zzeb8g-1440859602-0-160"
+   }
+)
+for thread in threads:
     # The thread object is the same class as the one returned by get_threads()
     for post in fourchan.get_posts(thread):
        # Do stuff with the post - refer to the model documentation in pychan's README for details
@@ -174,6 +211,7 @@ The table below corresponds to the `pychan.models.Thread` class.
 | `thread.is_stickied` | `bool` | `True`, `False`
 | `thread.is_closed` | `bool` | `True`, `False`
 | `thread.is_archived` | `bool` | `True`, `False`
+| `thread.url` | `str` | `"https://boards.4channel.org/a/thread/251097344"`
 
 ### Posts
 
@@ -181,14 +219,15 @@ The table below corresponds to the `pychan.models.Post` class.
 
 | Field | Type | Example Value(s) |
 | ----- | ---- | ---------------- |
-`post.thread` | `Thread` | `pychan.models.Thread`
-`post.number` | `int` | `882774935`, `882774974`
-`post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime) | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
-`post.poster` | `Poster` | `pychan.models.Poster`
-`post.text` | `str` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
-`post.is_original_post` | `bool` | `True`, `False`
-`post.file` | `Optional[File]` | `None`, `pychan.models.File`
-`post.replies` | `list[Post]` | `[]`, `[pychan.models.Post, pychan.models.Post]`
+| `post.thread` | `Thread` | `pychan.models.Thread`
+| `post.number` | `int` | `882774935`, `882774974`
+| `post.timestamp` | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime) | [datetime.datetime](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+| `post.poster` | `Poster` | `pychan.models.Poster`
+| `post.text` | `str` | `">be me\n>be bored\n>write pychan\n>somehow it works"`
+| `post.is_original_post` | `bool` | `True`, `False`
+| `post.file` | `Optional[File]` | `None`, `pychan.models.File`
+| `post.replies` | `list[Post]` | `[]`, `[pychan.models.Post, pychan.models.Post]`
+| `post.url` | `str` | `"https://boards.4channel.org/a/thread/251097344#p251097419"`
 
 #### A Note About Replies
 
