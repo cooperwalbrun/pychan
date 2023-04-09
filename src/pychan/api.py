@@ -70,6 +70,7 @@ class ParsingError(Exception):
 class FourChan:
     _UNPARSABLE_BOARDS = ["f"]
     _POST_TEXT_SELECTOR = "blockquote.postMessage"
+    _USER_AGENT_HEADER_NAME = "User-Agent"
 
     def __init__(
         self,
@@ -89,7 +90,6 @@ class FourChan:
                                          be raised so that users of this FourChan instance will see
                                          them.
         """
-
         self._agent = str(uuid4())
         self._logger = logger if logger is not None else PychanLogger(LogLevel.OFF)
         self._raise_http_exceptions = raise_http_exceptions
@@ -227,22 +227,19 @@ class FourChan:
         self,
         url: str,
         *,
-        expect_404: bool = False,
         headers: Optional[dict[str, str]] = None,
         params: Optional[dict[str, str]] = None
     ) -> Optional[Response]:
         self._throttle_request()
 
         h = {} if headers is None else headers
-        response = requests.get(url, headers={"User-Agent": self._agent, **h}, params=params)
+        response = requests.get(
+            url, headers={
+                self._USER_AGENT_HEADER_NAME: self._agent, **h
+            }, params=params
+        )
         if response.status_code == 200:
             return response
-        elif response.status_code == 404:
-            if not expect_404:
-                self._logger.warn(f"Received a 404 status code from {url}")
-                if self._raise_http_exceptions:
-                    response.raise_for_status()
-            return None
         else:
             self._logger.error(f"Unexpected status code {response.status_code} when fetching {url}")
             if self._raise_http_exceptions:
@@ -259,9 +256,8 @@ class FourChan:
         ret = []
         self._logger.info("Fetching all boards from 4chan...")
 
-        # Below, we use https://boards.4channel.org/pol/catalog instead of the homepage of 4chan due
-        # to CloudFlare (and at the time of this writing, the VeNoMouS/cloudscraper repository on
-        # GitHub does not work and seems to have disabled GitHub issues entirely)
+        # Below, we just choose a random 4chan page which includes the header/footer containing the
+        # list of boards
         response = self._request_helper("https://boards.4channel.org/pol/catalog")
         if response is not None:
             soup = BeautifulSoup(response.text, "html.parser")
@@ -304,13 +300,15 @@ class FourChan:
                             if isinstance(title, bool):
                                 # The title will only be a boolean if no title exists (False)
                                 title = None
+                            title = title if title is not None and len(title.strip()) > 0 else None
                             ret.append(
                                 Thread(
                                     sanitized_board,
                                     parsed_id,
-                                    title=title if title is not None and len(title) > 0 else None,
+                                    title=title,
                                     is_stickied=thread.get("sticky") == 1,
-                                    is_closed=thread.get("closed") == 1
+                                    is_closed=thread.get("closed") == 1,
+                                    is_archived=False
                                 )
                             )
 
@@ -411,7 +409,8 @@ class FourChan:
 
         return ret
 
-    def search(self, *, board: str, text: str) -> Generator[Thread, None, None]:
+    def search(self, *, board: str, text: str, user_agent: str,
+               cloudflare_cookies: dict[str, str]) -> Generator[Thread, None, None]:
         """
         Executes a given text query in a given board. This method leverages 4chan's native search
         functionality.
@@ -419,6 +418,14 @@ class FourChan:
         :param board: The board within which to perform the search. You may include slashes.
                       Examples: "/b/", "b", "vg/", "/vg"
         :param text: The text against which to search.
+        :param user_agent: The User-Agent header value to use in the HTTP request. If this value is
+                           not the same one that is tied to the provided user_agent, you will
+                           receive HTTP 403 errors.
+        :param cloudflare_cookies: A dictionary mapping cookie names to their values, where these
+                                   cookies are appropriate for bypassing the Cloudflare checks in
+                                   front of the 4chan API. If this value is not the same one that is
+                                   tied to the provided user_agent, you will receive HTTP 403
+                                   errors.
         :return: A Generator which yields threads one at a time until every thread in the search
                  results has been returned.
         """
@@ -429,9 +436,16 @@ class FourChan:
         query = text.strip()
 
         def get(o: int) -> Optional[Response]:
+            cookie = "; ".join([f"{k}={v}" for k, v in cloudflare_cookies.items()])
             return self._request_helper(
                 "https://find.4channel.org/api",
-                headers={"Accept": "application/json"},
+                headers={
+                    "Accept": "application/json",
+                    "Origin": "https://boards.4channel.org",
+                    "Referer": "https://boards.4channel.org/",
+                    self._USER_AGENT_HEADER_NAME: user_agent,
+                    "Cookie": cookie
+                },
                 params={
                     "o": str(o), "q": query, "b": sanitized_board
                 }
@@ -453,26 +467,35 @@ class FourChan:
             offset += 10
 
             if response is not None:
-                for t in response.json().get("threads", []):
-                    number = t.get("thread", "")
-                    posts = t.get("posts", [])
-                    if len(number) > 1 and len(posts) > 0:
-                        title = posts[0].get("sub", "")
-                        title = title if len(title.strip()) > 0 else None
-                        thread = Thread(
-                            t.get("board", sanitized_board),
-                            int(number[1:]),
-                            title=title,
-                            # Closed/stickied/archived threads are not returned in search results
-                            is_stickied=False,
-                            is_closed=False,
-                            is_archived=False
-                        )
-                        if thread.number not in seen_thread_numbers:
-                            new_this_iteration = True
-                            seen_thread_numbers.add(thread.number)
-                            yield thread
-                        else:
-                            self._logger.debug(
-                                f"Skipping a duplicate thread in the search results: {thread}"
-                            )
+                threads = response.json().get("threads", [])
+                if isinstance(threads, list):
+                    for t in threads:
+                        try:
+                            number = t.get("thread", "")
+                            posts = t.get("posts", [])
+                            if len(number) > 1 and len(posts) > 0:
+                                title = posts[0].get("sub", "")
+                                title = title if len(title.strip()) > 0 else None
+                                thread = Thread(
+                                    t.get("board", sanitized_board),
+                                    int(number[1:]),
+                                    title=title,
+                                    # Closed/stickied/archived threads are not returned in search results
+                                    is_stickied=False,
+                                    is_closed=False,
+                                    is_archived=False
+                                )
+                                if thread.number not in seen_thread_numbers:
+                                    new_this_iteration = True
+                                    seen_thread_numbers.add(thread.number)
+                                    yield thread
+                                else:
+                                    self._logger.debug(
+                                        f"Skipping a duplicate thread in the search results: {thread}"
+                                    )
+                        except Exception as e:
+                            self._parse_error(str(e))
+                else:
+                    self._parse_error(
+                        f'Detected an unexpected structure in the "threads" JSON field: {threads}'
+                    )

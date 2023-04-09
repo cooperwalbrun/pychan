@@ -299,43 +299,59 @@ def test_get_posts_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan)
     with_mocks(500, helper)
 
 
-@responses.activate
-def test_search(fourchan: FourChan) -> None:
-    with open(f"{os.path.dirname(__file__)}/json/search_results.json", "r",
-              encoding="utf-8") as file:
-        test_data = file.read()
-
+def test_search(fourchan_no_raises: FourChan) -> None:
     board = "news"
     search_text = "democrat"
 
-    responses.add(
-        responses.GET,
-        f"https://find.4channel.org/api?q={parse.quote(search_text)}&b={board}&o=0",
-        status=200,
-        body=test_data
-    )
-    responses.add(
-        # This response terminates the iteration within the generator (the generator halts when it
-        # encounters a "page" of results which have all already been seen, so we simply mock the
-        # results on the second "page" as being identical to the results on the first "page" above)
-        responses.GET,
-        f"https://find.4channel.org/api?q={parse.quote(search_text)}&b={board}&o=10",
-        status=200,
-        body=test_data
-    )
+    @responses.activate
+    def helper(file_name: str, *, expected_threads: list[Thread]) -> None:
+        with open(f"{os.path.dirname(__file__)}/json/{file_name}", "r", encoding="utf-8") as file:
+            test_data = file.read()
 
-    expected = [
-        Thread(board, 1077597, title="Democrat corruption and grooming."),
-        Thread(board, 1077143, title="In Reality, All The Actual Groomers Are Republicans")
-    ]
-    actual = list(fourchan.search(board=board, text=search_text))
-    assert len(expected) == len(actual)
-    for i, thread in enumerate(expected):
-        assert tuple(thread) == tuple(actual[i])
+        responses.add(
+            responses.GET,
+            f"https://find.4channel.org/api?q={parse.quote(search_text)}&b={board}&o=0",
+            status=200,
+            body=test_data
+        )
+        responses.add(
+            # This response terminates the iteration within the generator (the generator halts when
+            # it encounters a "page" of results which have all already been seen, so we simply mock
+            # the results on the second "page" as being identical to the results on the first "page"
+            # above)
+            responses.GET,
+            f"https://find.4channel.org/api?q={parse.quote(search_text)}&b={board}&o=10",
+            status=200,
+            body=test_data
+        )
+
+        actual = list(
+            fourchan_no_raises.search(
+                board=board, text=search_text, user_agent="test", cloudflare_cookies={}
+            )
+        )
+        assert len(expected_threads) == len(actual)
+        for i, thread in enumerate(expected_threads):
+            assert tuple(thread) == tuple(actual[i])
+
+    helper(
+        "search_results.json",
+        expected_threads=[
+            Thread(board, 1077597, title="Democrat corruption and grooming."),
+            Thread(board, 1077143, title="In Reality, All The Actual Groomers Are Republicans")
+        ]
+    )
+    helper(
+        "search_results_unparsable_partial.json",
+        expected_threads=[
+            Thread(board, 1077143, title="In Reality, All The Actual Groomers Are Republicans")
+        ]
+    )
+    helper("search_results_unparsable_whole.json", expected_threads=[])
 
 
 def test_search_unparsable_board(fourchan: FourChan) -> None:
-    assert len(list(fourchan.search(board="f", text=""))) == 0
+    assert len(list(fourchan.get_threads("f"))) == 0
 
 
 def test_search_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan) -> None:
@@ -352,14 +368,22 @@ def test_search_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan) ->
         function()
 
     def helper_no_raises() -> None:
-        actual = list(fourchan_no_raises.search(board=board, text=search_text))
+        actual = list(
+            fourchan_no_raises.search(
+                board=board, text=search_text, user_agent="test", cloudflare_cookies={}
+            )
+        )
         assert len(actual) == 0
 
     def helper() -> None:
         with pytest.raises(HTTPError):
             # The call to list() below forces the generator to execute; without it, the actual HTTP
             # call never happens
-            list(fourchan.search(board=board, text=search_text))
+            list(
+                fourchan.search(
+                    board=board, text=search_text, user_agent="test", cloudflare_cookies={}
+                )
+            )
 
     with_mocks(403, helper_no_raises)
     with_mocks(404, helper_no_raises)

@@ -21,8 +21,12 @@ class Thread:
         self.is_closed = is_closed
         self.is_archived = is_archived
 
+    @property
+    def url(self) -> str:
+        return f"https://boards.4channel.org/{self.board}/thread/{self.number}"
+
     def __repr__(self) -> str:
-        return f"Thread(https://boards.4channel.org/{self.board}/thread/{self.number})"
+        return f"Thread({self.url})"
 
     def __str__(self) -> str:
         return repr(self)
@@ -184,10 +188,14 @@ class Post:
         self.file = file
         self.replies: list[Post] = replies if replies is not None else []
 
-    def __repr__(self) -> str:
-        return "Post(https://boards.4channel.org/{})".format(
+    @property
+    def url(self) -> str:
+        return "https://boards.4channel.org/{}".format(
             f"{self.thread.board}/thread/{self.thread.number}#p{self.number}"
         )
+
+    def __repr__(self) -> str:
+        return f"Post({self.url})"
 
     def __str__(self) -> str:
         return repr(self)
