@@ -98,7 +98,7 @@ for thread in fourchan.get_threads("b"):
 
 ### Fetch Archived Threads
 
->Note: some boards do not have an archive (e.g. /b/). Such boards will either return an empty list
+>Note: some boards do not have an archive (e.g. `/b/`). Such boards will either return an empty list
 >or raise an exception depending on how you have configured your `FourChan` instance.
 
 The threads returned by this function will always have a `title` field containing the text shown in
