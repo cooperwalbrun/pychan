@@ -47,7 +47,7 @@ def test_parse_error(fourchan: FourChan) -> None:
         fourchan._parse_error("test")
 
 
-def test_parse_catalog_json(fourchan: FourChan) -> None:
+def test_parse_catalog_json_from_javascript(fourchan: FourChan) -> None:
     # yapf: disable
     tests = {
         'var catalog = {"test": "test"};': {"test": "test"},
@@ -179,6 +179,7 @@ def test_get_archived_threads_http_errors(fourchan: FourChan, fourchan_no_raises
     with_mocks(404, helper_no_raises)
     with_mocks(500, helper_no_raises)
     with_mocks(403, helper)
+    with_mocks(404, helper)
     with_mocks(500, helper)
 
 
@@ -296,6 +297,7 @@ def test_get_posts_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan)
     with_mocks(404, helper_no_raises)
     with_mocks(500, helper_no_raises)
     with_mocks(403, helper)
+    with_mocks(404, helper)
     with_mocks(500, helper)
 
 
@@ -389,4 +391,5 @@ def test_search_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan) ->
     with_mocks(404, helper_no_raises)
     with_mocks(500, helper_no_raises)
     with_mocks(403, helper)
+    with_mocks(404, helper)
     with_mocks(500, helper)
