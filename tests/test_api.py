@@ -65,9 +65,7 @@ def test_get_boards(fourchan: FourChan) -> None:
     with open(f"{os.path.dirname(__file__)}/html/pol_catalog.html", "r", encoding="utf-8") as file:
         test_data = file.read()
 
-    responses.add(
-        responses.GET, "https://boards.4channel.org/pol/catalog", status=200, body=test_data
-    )
+    responses.add(responses.GET, "https://boards.4chan.org/pol/catalog", status=200, body=test_data)
     boards = fourchan.get_boards()
 
     assert "tv" in boards
@@ -84,7 +82,7 @@ def test_get_threads(fourchan: FourChan) -> None:
         test_data = file.read()
 
     responses.add(
-        responses.GET, f"https://boards.4channel.org/{board}/catalog", status=200, body=test_data
+        responses.GET, f"https://boards.4chan.org/{board}/catalog", status=200, body=test_data
     )
 
     expected = [
@@ -117,13 +115,13 @@ def test_get_threads_http_errors(fourchan: FourChan, fourchan_no_raises: FourCha
     def with_mocks(status: int, function: Callable[[], None]) -> None:
         # The method should only attempt to fetch the first page, because the generator should
         # terminate once it reaches a page that was not retrievable
-        responses.add(responses.GET, f"https://boards.4channel.org/{board}/catalog", status=status)
+        responses.add(responses.GET, f"https://boards.4chan.org/{board}/catalog", status=status)
         function()
 
     def helper_without_raises() -> None:
         actual = list(fourchan_no_raises.get_threads(board))
         assert len(actual) == 0
-        responses.assert_call_count(f"https://boards.4channel.org/{board}/catalog", count=1)
+        responses.assert_call_count(f"https://boards.4chan.org/{board}/catalog", count=1)
 
     def helper() -> None:
         with pytest.raises(HTTPError):
@@ -145,7 +143,7 @@ def test_get_archived_threads(fourchan: FourChan) -> None:
         test_data = file.read()
 
     responses.add(
-        responses.GET, f"https://boards.4channel.org/{board}/archive", status=200, body=test_data
+        responses.GET, f"https://boards.4chan.org/{board}/archive", status=200, body=test_data
     )
 
     threads = fourchan.get_archived_threads(board)
@@ -157,7 +155,7 @@ def test_get_archived_threads(fourchan: FourChan) -> None:
 
 def test_get_archived_threads_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan) -> None:
     board = "pol"
-    url = f"https://boards.4channel.org/{board}/archive"
+    url = f"https://boards.4chan.org/{board}/archive"
 
     @responses.activate
     def with_mocks(status: int, function: Callable[[], None]) -> None:
@@ -197,7 +195,7 @@ def test_get_posts(fourchan: FourChan) -> None:
 
     responses.add(
         responses.GET,
-        f"https://boards.4channel.org/{processed_thread.board}/thread/{processed_thread.number}/",
+        f"https://boards.4chan.org/{processed_thread.board}/thread/{processed_thread.number}/",
         status=200,
         body=test_data
     )
@@ -257,7 +255,7 @@ def test_get_post_from_moderator(fourchan: FourChan) -> None:
 
     responses.add(
         responses.GET,
-        f"https://boards.4channel.org/pol/thread/259848258/",
+        f"https://boards.4chan.org/pol/thread/259848258/",
         status=200,
         body=test_data
     )
@@ -280,7 +278,7 @@ def test_get_posts_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan)
     def with_mocks(status: int, function: Callable[[], None]) -> None:
         responses.add(
             responses.GET,
-            f"https://boards.4channel.org/{thread.board}/thread/{thread.number}/",
+            f"https://boards.4chan.org/{thread.board}/thread/{thread.number}/",
             status=status,
         )
         function()
@@ -312,7 +310,7 @@ def test_search(fourchan_no_raises: FourChan) -> None:
 
         responses.add(
             responses.GET,
-            f"https://find.4channel.org/api?q={parse.quote(search_text)}&b={board}&o=0",
+            f"https://find.4chan.org/api?q={parse.quote(search_text)}&b={board}&o=0",
             status=200,
             body=test_data
         )
@@ -322,7 +320,7 @@ def test_search(fourchan_no_raises: FourChan) -> None:
             # the results on the second "page" as being identical to the results on the first "page"
             # above)
             responses.GET,
-            f"https://find.4channel.org/api?q={parse.quote(search_text)}&b={board}&o=10",
+            f"https://find.4chan.org/api?q={parse.quote(search_text)}&b={board}&o=10",
             status=200,
             body=test_data
         )
@@ -364,7 +362,7 @@ def test_search_http_errors(fourchan: FourChan, fourchan_no_raises: FourChan) ->
     def with_mocks(status: int, function: Callable[[], None]) -> None:
         responses.add(
             responses.GET,
-            f"https://find.4channel.org/api?q={parse.quote(search_text)}&b={board}&o=0",
+            f"https://find.4chan.org/api?q={parse.quote(search_text)}&b={board}&o=0",
             status=status,
         )
         function()

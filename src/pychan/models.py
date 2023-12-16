@@ -23,7 +23,7 @@ class Thread:
 
     @property
     def url(self) -> str:
-        return f"https://boards.4channel.org/{self.board}/thread/{self.number}"
+        return f"https://boards.4chan.org/{self.board}/thread/{self.number}"
 
     def __repr__(self) -> str:
         return f"Thread({self.url})"
@@ -190,7 +190,7 @@ class Post:
 
     @property
     def url(self) -> str:
-        return "https://boards.4channel.org/{}".format(
+        return "https://boards.4chan.org/{}".format(
             f"{self.thread.board}/thread/{self.thread.number}#p{self.number}"
         )
 
