@@ -142,12 +142,11 @@ like one of the following (this list is alphabetized and not exhaustive):
 
 A manual way to acquire these values is to perform a 4chan search using a web browser and leverage
 the browser's Developer Tools to trace the network requests that were made during the search. The
-request that contains the Cloudflare values will have been made to `https://find.4channel.org/api`
-with some query parameters. Once you have found this request, copy the `User-Agent` and `Cookie`
-values that were sent in your request, then pass them to `pychan`'s `search()` method. Be aware that
-the Cloudflare cookie(s) have an expiration on them, so this manual workaround will only return
-results until Cloudflare invalidates your cookie(s). After that, you will need to acquire new
-values.
+request that contains the Cloudflare values will have been made to `https://find.4chan.org/api` with
+some query parameters. Once you have found this request, copy the `User-Agent` and `Cookie` values
+that were sent in your request, then pass them to `pychan`'s `search()` method. Be aware that the
+Cloudflare cookie(s) have an expiration on them, so this manual workaround will only return results
+until Cloudflare invalidates your cookie(s). After that, you will need to acquire new values.
 
 #### Search 4chan Code Example
 
@@ -211,7 +210,7 @@ The table below corresponds to the `pychan.models.Thread` class.
 | `thread.is_stickied` | `bool` | `True`, `False`
 | `thread.is_closed` | `bool` | `True`, `False`
 | `thread.is_archived` | `bool` | `True`, `False`
-| `thread.url` | `str` | `"https://boards.4channel.org/a/thread/251097344"`
+| `thread.url` | `str` | `"https://boards.4chan.org/a/thread/251097344"`
 
 ### Posts
 
@@ -227,7 +226,7 @@ The table below corresponds to the `pychan.models.Post` class.
 | `post.is_original_post` | `bool` | `True`, `False`
 | `post.file` | `Optional[File]` | `None`, `pychan.models.File`
 | `post.replies` | `list[Post]` | `[]`, `[pychan.models.Post, pychan.models.Post]`
-| `post.url` | `str` | `"https://boards.4channel.org/a/thread/251097344#p251097419"`
+| `post.url` | `str` | `"https://boards.4chan.org/a/thread/251097344#p251097419"`
 
 #### A Note About Replies
 

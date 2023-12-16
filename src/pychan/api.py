@@ -258,7 +258,7 @@ class FourChan:
 
         # Below, we just choose a random 4chan page which includes the header/footer containing the
         # list of boards
-        response = self._request_helper("https://boards.4channel.org/pol/catalog")
+        response = self._request_helper("https://boards.4chan.org/pol/catalog")
         if response is not None:
             soup = BeautifulSoup(response.text, "html.parser")
             board_list = _find_first(soup, ".boardList")
@@ -285,7 +285,7 @@ class FourChan:
 
         self._logger.info(f"Fetching threads for board /{sanitized_board}/...")
 
-        response = self._request_helper(f"https://boards.4channel.org/{sanitized_board}/catalog")
+        response = self._request_helper(f"https://boards.4chan.org/{sanitized_board}/catalog")
         if response is not None:
             soup = BeautifulSoup(response.text, "html.parser")
             for script in soup.select('script[type="text/javascript"]'):
@@ -338,7 +338,7 @@ class FourChan:
 
         self._logger.info(f"Fetching archived threads for board /{sanitized_board}/...")
 
-        response = self._request_helper(f"https://boards.4channel.org/{sanitized_board}/archive")
+        response = self._request_helper(f"https://boards.4chan.org/{sanitized_board}/archive")
         ret = []
         if response is not None:
             soup = BeautifulSoup(response.text, "html.parser")
@@ -375,7 +375,7 @@ class FourChan:
         self._logger.info(f"Fetching posts for {t}...")
 
         response = self._request_helper(
-            "https://boards.4channel.org/{}/thread/{}/".format(t.board, t.number)
+            "https://boards.4chan.org/{}/thread/{}/".format(t.board, t.number)
         )
         if response is None:
             return []
@@ -419,13 +419,13 @@ class FourChan:
                       Examples: "/b/", "b", "vg/", "/vg"
         :param text: The text against which to search.
         :param user_agent: The User-Agent header value to use in the HTTP request. If this value is
-                           not the same one that is tied to the provided user_agent, you will
-                           receive HTTP 403 errors.
+                           not the same as the one that is "associated" with the provided
+                           cloudflare_cookies, you will receive HTTP 403 errors.
         :param cloudflare_cookies: A dictionary mapping cookie names to their values, where these
                                    cookies are appropriate for bypassing the Cloudflare checks in
                                    front of the 4chan API. If this value is not the same one that is
-                                   tied to the provided user_agent, you will receive HTTP 403
-                                   errors.
+                                   "associated" with the provided user_agent, you will receive HTTP
+                                   403 errors.
         :return: A Generator which yields threads one at a time until every thread in the search
                  results has been returned.
         """
@@ -438,11 +438,11 @@ class FourChan:
         def get(o: int) -> Optional[Response]:
             cookie = "; ".join([f"{k}={v}" for k, v in cloudflare_cookies.items()])
             return self._request_helper(
-                "https://find.4channel.org/api",
+                "https://find.4chan.org/api",
                 headers={
                     "Accept": "application/json",
-                    "Origin": "https://boards.4channel.org",
-                    "Referer": "https://boards.4channel.org/",
+                    "Origin": "https://boards.4chan.org",
+                    "Referer": "https://boards.4chan.org/",
                     self._USER_AGENT_HEADER_NAME: user_agent,
                     "Cookie": cookie
                 },

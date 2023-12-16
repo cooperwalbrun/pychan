@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.7.0 - 2023-12-16
+
+### Changed
+
+* All 4chan HTTP operations will now use the `4chan.org` domain (previously, some HTTP operations
+  used the `4channel.org` domain) (by [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.6.0 - 2023-04-09
 
 ### Added
