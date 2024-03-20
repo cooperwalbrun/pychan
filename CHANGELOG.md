@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.8.0 - 2024-03-20
+
+### Added
+
+* Python 3.12 is now an official build target for `pychan` (by
+  [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.7.0 - 2023-12-16
 
 ### Changed
