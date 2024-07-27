@@ -7,14 +7,19 @@ from uuid import uuid4
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from pyrate_limiter import Limiter, RequestRate, Duration
+from pyrate_limiter import Limiter, Rate, Duration
 from requests import Response
 
 from pychan.logger import PychanLogger, LogLevel
 from pychan.models import File, Poster
 from pychan.models import Post, Thread
 
-_limiter = Limiter(RequestRate(1, Duration.SECOND))
+# Note: using a max_delay of 2000 below should make it so that this rate limiter will block the
+# current thread until the request can be issued again. Note that using a delay greater than the
+# actual throttle (1 second per request) will ensure we always wait long enough for the request to
+# be issued.
+# See: https://pyratelimiter.readthedocs.io/en/latest/index.html?highlight=wait#rate-limit-delays
+_limiter = Limiter(Rate(1, Duration.SECOND), max_delay=2000)
 
 
 def _find_first(selectable_entity: Tag, selector: str) -> Optional[Tag]:
@@ -217,10 +222,10 @@ class FourChan:
         else:
             return False
 
-    @_limiter.ratelimit("4chan", delay=True)
     def _throttle_request(self) -> None:
         # The throttling mechanism is defined as a dedicated function like this so that it can be
         # mocked in unit tests in a straightforward manner
+        _limiter.try_acquire("4chan")
         return
 
     def _request_helper(
