@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing currently!
 
+## v0.9.0 - 2024-07-26
+
+### Changed
+
+* Updated the version constraint of the `pyrate-limiter` dependency from `>=2.8,<3` to `>=3,<4` (by
+  [@cooperwalbrun](https://github.com/cooperwalbrun))
+
 ## v0.8.0 - 2024-03-20
 
 ### Added
