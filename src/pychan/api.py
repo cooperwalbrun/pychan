@@ -15,9 +15,9 @@ from pychan.models import File, Poster
 from pychan.models import Post, Thread
 
 # Note: using a max_delay of 2000 below should make it so that this rate limiter will block the
-# current thread until the request can be issued again. Note that using a delay greater than the
-# actual throttle (1 second per request) will ensure we always wait long enough for the request to
-# be issued.
+# current thread until the request can be issued again. The reason for this is that using a delay
+# greater than the actual throttle (1 second per request) will ensure we always wait long enough for
+# the request to be issued.
 # See: https://pyratelimiter.readthedocs.io/en/latest/index.html?highlight=wait#rate-limit-delays
 _limiter = Limiter(Rate(1, Duration.SECOND), max_delay=2000)
 
