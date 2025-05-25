@@ -1,4 +1,8 @@
-# pychan [![master](https://github.com/cooperwalbrun/pychan/actions/workflows/master.yml/badge.svg)](https://github.com/cooperwalbrun/pychan/actions/workflows/master.yml) [![PyPI](https://img.shields.io/pypi/v/pychan)](https://pypi.org/project/pychan) [![codecov](https://codecov.io/gh/cooperwalbrun/pychan/branch/master/graph/badge.svg?token=BJEJOMIYWY)](https://codecov.io/gh/cooperwalbrun/pychan)
+# pychan
+
+>Update 2025-05-25: this project has been archived and will no longer be maintained, as 4chan
+>recently made changes to its firewall infrastructure (in response to the attacks in April 2025)
+>which made it more difficult to scrape its content.
 
 1. [Overview](#overview)
 2. [Installation](#installation)
